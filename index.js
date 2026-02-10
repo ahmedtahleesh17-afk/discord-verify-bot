@@ -32,7 +32,6 @@ const db = mysql.createPool({
   ssl: { rejectUnauthorized: false }
 });
 
-
 // ===================== TEMP STORAGE =====================
 const verificationCodes = new Map();
 
@@ -44,9 +43,20 @@ const transporter = nodemailer.createTransport({
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
-  }
+  },
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 10000
 });
 
+// اختبار SMTP عند التشغيل
+transporter.verify((err) => {
+  if (err) {
+    console.error("❌ SMTP CONNECTION FAILED:", err.message);
+  } else {
+    console.log("✅ SMTP Ready to send emails");
+  }
+});
 
 // ===================== SERVER SETTINGS =====================
 const SERVER_ID = '1469423215196770468';
@@ -67,19 +77,16 @@ client.on('guildMemberAdd', async member => {
       [member.id]
     );
 
-    // 🚫 إذا محظور
     if (rows.length && rows[0].banned == 1) {
       if (bannedRole) await member.roles.set([bannedRole]);
       return;
     }
 
-    // ✅ إذا موثق سابقًا → يدخل مباشرة
     if (rows.length) {
       if (memberRole) await member.roles.set([memberRole]);
       return;
     }
 
-    // 🟡 مستخدم جديد → Activation required
     if (activationRole) await member.roles.add(activationRole);
 
   } catch (err) {
@@ -95,7 +102,6 @@ client.once('ready', async () => {
     const verifyChannel = await client.channels.fetch(VERIFY_CHANNEL_ID);
     const selectChannel = await client.channels.fetch(SELECT_CHANNEL_ID);
 
-    // VERIFY PANEL
     const verifyRow = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId('verify_start')
@@ -108,7 +114,6 @@ client.once('ready', async () => {
       components: [verifyRow]
     });
 
-    // ADMIN PANEL
     const selectRow = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId('get_email')
@@ -140,7 +145,6 @@ client.once('ready', async () => {
 client.on(Events.InteractionCreate, async interaction => {
   try {
 
-    // VERIFY BUTTON
     if (interaction.isButton() && interaction.customId === 'verify_start') {
       try {
         await interaction.user.send(
@@ -162,7 +166,6 @@ client.on(Events.InteractionCreate, async interaction => {
       }
     }
 
-    // GET EMAIL BUTTON
     if (interaction.isButton() && interaction.customId === 'get_email') {
       const modal = new ModalBuilder()
         .setCustomId('email_lookup_modal')
@@ -181,7 +184,6 @@ client.on(Events.InteractionCreate, async interaction => {
       return interaction.showModal(modal);
     }
 
-    // EMAIL LOOKUP MODAL
     if (interaction.isModalSubmit() && interaction.customId === 'email_lookup_modal') {
       const userId = interaction.fields.getTextInputValue('discord_id_input');
 
@@ -199,7 +201,6 @@ client.on(Events.InteractionCreate, async interaction => {
       });
     }
 
-    // BAN / UNBAN
     if (interaction.isButton() && ['ban_user', 'unban_user'].includes(interaction.customId)) {
       const modal = new ModalBuilder()
         .setCustomId(interaction.customId === 'ban_user' ? 'ban_modal' : 'unban_modal')
@@ -245,7 +246,6 @@ client.on('messageCreate', async message => {
     if (!email.endsWith('@students.ptuk.edu.ps'))
       return message.reply('❌ استخدم الإيميل الجامعي فقط');
 
-    // ❗ CHECK IF EMAIL EXISTS
     const [exists] = await db.query(
       'SELECT id FROM verified_users WHERE email = ?',
       [email]
@@ -258,14 +258,28 @@ client.on('messageCreate', async message => {
 
     verificationCodes.set(message.author.id, { step: 'code', code, email });
 
-    await transporter.sendMail({
-      from: `"PTUK Verify" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: 'Verification Code',
-      html: `<h2>رمز التحقق</h2><h1>${code}</h1>`
-    });
+    // ================= EMAIL SEND =================
+    try {
+      await transporter.sendMail({
+        from: `"PTUK Verify" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: 'Verification Code',
+        html: `<h2>رمز التحقق</h2><h1>${code}</h1>`
+      });
 
-    return message.reply('📨 تم إرسال الكود — أرسله هنا');
+      return message.reply('📨 تم إرسال الكود — أرسله هنا');
+
+    } catch (err) {
+      console.error("❌ EMAIL SEND FAILED:", err.message);
+
+      verificationCodes.delete(message.author.id);
+
+      return message.reply(
+        '❌ فشل إرسال الإيميل.\n' +
+        'السبب غالبًا Railway تمنع Gmail SMTP.\n' +
+        'تواصل مع الإدارة.'
+      );
+    }
   }
 
   // CODE STEP
@@ -322,7 +336,6 @@ async function handleBan(interaction, input) {
   await member.roles.set([bannedRole]);
   await db.query('UPDATE verified_users SET banned = 1 WHERE discord_id = ?', [userId]);
 
-  // 📩 DM TO BANNED USER
   try {
     await member.send(
       `🚫 **لقد تم حظرك من السيرفر** بسبب انتهاكك أحد القوانين.\n\n` +
@@ -365,11 +378,8 @@ async function handleUnban(interaction, input) {
 
 // ===================== LOGIN =====================
 if (!process.env.DISCORD_TOKEN) {
-  console.error('❌ DISCORD_TOKEN غير موجود في .env');
+  console.error('❌ DISCORD_TOKEN غير موجود في Variables');
   process.exit(1);
 }
 
 client.login(process.env.DISCORD_TOKEN);
-
-
-
