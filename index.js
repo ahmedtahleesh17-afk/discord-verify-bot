@@ -37,29 +37,6 @@ const db = mysql.createPool({
 // ===================== TEMP STORAGE =====================
 const verificationCodes = new Map();
 
-// ===================== EMAIL CONFIG =====================
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  },
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 10000
-});
-
-// اختبار SMTP عند التشغيل
-transporter.verify((err) => {
-  if (err) {
-    console.error("❌ SMTP CONNECTION FAILED:", err.message);
-  } else {
-    console.log("✅ SMTP Ready to send emails");
-  }
-});
-
 // ===================== SERVER SETTINGS =====================
 const SERVER_ID = '1469423215196770468';
 const VERIFY_CHANNEL_ID = '1469452854535258232';
@@ -260,27 +237,22 @@ client.on('messageCreate', async message => {
 
     verificationCodes.set(message.author.id, { step: 'code', code, email });
 
-    // ================= EMAIL SEND =================
-   try {
-  await sgMail.send({
-    to: email,
-    from: process.env.EMAIL_USER,
-    subject: 'PTUK Verification Code',
-    html: `<h2>رمز التحقق</h2><h1>${code}</h1>`
-  });
+    try {
+      await sgMail.send({
+        to: email,
+        from: process.env.EMAIL_USER,
+        subject: 'PTUK Verification Code',
+        html: `<h2>رمز التحقق</h2><h1>${code}</h1>`
+      });
 
-  return message.reply('📨 تم إرسال كود التحقق إلى بريدك الجامعي');
+      return message.reply('📨 تم إرسال كود التحقق إلى بريدك الجامعي');
 
-} catch (err) {
-  console.error("❌ SENDGRID ERROR:", err.message);
-
-  verificationCodes.delete(message.author.id);
-
-  return message.reply(
-    '❌ فشل إرسال الإيميل — أبلغ الإدارة.'
-  );
-}
-
+    } catch (err) {
+      console.error("❌ SENDGRID ERROR:", err.message);
+      verificationCodes.delete(message.author.id);
+      return message.reply('❌ فشل إرسال الإيميل — أبلغ الإدارة.');
+    }
+  }
 
   // CODE STEP
   if (userData.step === 'code') {
@@ -378,9 +350,8 @@ async function handleUnban(interaction, input) {
 
 // ===================== LOGIN =====================
 if (!process.env.DISCORD_TOKEN) {
-  console.error('❌ DISCORD_TOKEN غير موجود في Variables');
+  console.error('❌ DISCORD_TOKEN غير موجود');
   process.exit(1);
 }
 
 client.login(process.env.DISCORD_TOKEN);
-
