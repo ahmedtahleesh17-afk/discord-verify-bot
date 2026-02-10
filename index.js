@@ -38,12 +38,15 @@ const verificationCodes = new Map();
 
 // ===================== EMAIL CONFIG =====================
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   }
 });
+
 
 // ===================== SERVER SETTINGS =====================
 const SERVER_ID = '1469423215196770468';
@@ -367,5 +370,6 @@ if (!process.env.DISCORD_TOKEN) {
 }
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
