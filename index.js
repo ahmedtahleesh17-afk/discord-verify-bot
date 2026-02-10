@@ -12,7 +12,9 @@ const {
   Events
 } = require('discord.js');
 
-const nodemailer = require('nodemailer');
+const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
 const mysql = require('mysql2/promise');
 
 // ===================== CLIENT =====================
@@ -259,28 +261,26 @@ client.on('messageCreate', async message => {
     verificationCodes.set(message.author.id, { step: 'code', code, email });
 
     // ================= EMAIL SEND =================
-    try {
-      await transporter.sendMail({
-        from: `"PTUK Verify" <${process.env.EMAIL_USER}>`,
-        to: email,
-        subject: 'Verification Code',
-        html: `<h2>رمز التحقق</h2><h1>${code}</h1>`
-      });
+   try {
+  await sgMail.send({
+    to: email,
+    from: process.env.EMAIL_USER,
+    subject: 'PTUK Verification Code',
+    html: `<h2>رمز التحقق</h2><h1>${code}</h1>`
+  });
 
-      return message.reply('📨 تم إرسال الكود — أرسله هنا');
+  return message.reply('📨 تم إرسال كود التحقق إلى بريدك الجامعي');
 
-    } catch (err) {
-      console.error("❌ EMAIL SEND FAILED:", err.message);
+} catch (err) {
+  console.error("❌ SENDGRID ERROR:", err.message);
 
-      verificationCodes.delete(message.author.id);
+  verificationCodes.delete(message.author.id);
 
-      return message.reply(
-        '❌ فشل إرسال الإيميل.\n' +
-        'السبب غالبًا Railway تمنع Gmail SMTP.\n' +
-        'تواصل مع الإدارة.'
-      );
-    }
-  }
+  return message.reply(
+    '❌ فشل إرسال الإيميل — أبلغ الإدارة.'
+  );
+}
+
 
   // CODE STEP
   if (userData.step === 'code') {
@@ -383,3 +383,4 @@ if (!process.env.DISCORD_TOKEN) {
 }
 
 client.login(process.env.DISCORD_TOKEN);
+
