@@ -56,19 +56,16 @@ client.on('guildMemberAdd', async member => {
       [member.id]
     );
 
-    // محظور
     if (rows.length && rows[0].banned == 1) {
       if (bannedRole) await member.roles.set([bannedRole]);
       return;
     }
 
-    // متحقق سابقًا
     if (rows.length && rows[0].banned == 0) {
       if (memberRole) await member.roles.set([memberRole]);
       return;
     }
 
-    // جديد → يحتاج تفعيل
     if (activationRole) {
       await member.roles.set([activationRole]);
     }
@@ -79,14 +76,13 @@ client.on('guildMemberAdd', async member => {
 });
 
 // ===================== READY =====================
-client.once('ready', async () => {
+client.once('clientReady', async () => {
   console.log(`✅ Bot online as ${client.user.tag}`);
 
   try {
     const verifyChannel = await client.channels.fetch(VERIFY_CHANNEL_ID);
     const selectChannel = await client.channels.fetch(SELECT_CHANNEL_ID);
 
-    // زر التحقق
     await verifyChannel.send({
       content: '🎓 اضغط للتحقق عبر الإيميل الجامعي',
       components: [
@@ -99,7 +95,6 @@ client.once('ready', async () => {
       ]
     });
 
-    // لوحة الإدارة
     await selectChannel.send({
       content: '🛠️ أدوات الإدارة والتحكم بالمستخدمين',
       components: [
@@ -131,7 +126,6 @@ client.once('ready', async () => {
 client.on(Events.InteractionCreate, async interaction => {
   try {
 
-    // بدء التحقق
     if (interaction.isButton() && interaction.customId === 'verify_start') {
       try {
         await interaction.user.send(
@@ -147,7 +141,6 @@ client.on(Events.InteractionCreate, async interaction => {
       }
     }
 
-    // البحث عن الإيميل
     if (interaction.isButton() && interaction.customId === 'get_email') {
       const modal = new ModalBuilder()
         .setCustomId('email_lookup_modal')
@@ -183,7 +176,6 @@ client.on(Events.InteractionCreate, async interaction => {
       });
     }
 
-    // BAN / UNBAN MODALS
     if (interaction.isButton() && ['ban_user', 'unban_user'].includes(interaction.customId)) {
       const modal = new ModalBuilder()
         .setCustomId(interaction.customId === 'ban_user' ? 'ban_modal' : 'unban_modal')
@@ -222,7 +214,6 @@ client.on('messageCreate', async message => {
   const userData = verificationCodes.get(message.author.id);
   if (!userData) return;
 
-  // إدخال الإيميل
   if (userData.step === 'email') {
     const email = message.content.trim();
 
@@ -230,7 +221,7 @@ client.on('messageCreate', async message => {
       return message.reply('❌ استخدم الإيميل الجامعي فقط');
 
     const [exists] = await db.query(
-      'SELECT id FROM verified_users WHERE email = ?',
+      'SELECT discord_id FROM verified_users WHERE email = ?',
       [email]
     );
 
@@ -251,13 +242,12 @@ client.on('messageCreate', async message => {
 
       return message.reply('📨 تم إرسال كود التحقق إلى بريدك الجامعي');
 
-    } catch (err) {
+    } catch {
       verificationCodes.delete(message.author.id);
       return message.reply('❌ فشل إرسال الإيميل — أبلغ الإدارة.');
     }
   }
 
-  // إدخال الكود
   if (userData.step === 'code') {
     if (message.content.trim() !== userData.code.toString())
       return message.reply('❌ الكود خاطئ');
@@ -267,9 +257,10 @@ client.on('messageCreate', async message => {
 
     if (!member) return message.reply('❌ يجب أن تكون داخل السيرفر');
 
-    // تحديث أو إضافة المستخدم
     await db.query(
-      'REPLACE INTO verified_users (discord_id, email, banned) VALUES (?, ?, 0)',
+      `INSERT INTO verified_users (discord_id, email, banned)
+       VALUES (?, ?, 0)
+       ON DUPLICATE KEY UPDATE email = VALUES(email)`,
       [message.author.id, userData.email]
     );
 
