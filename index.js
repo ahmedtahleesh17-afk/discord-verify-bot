@@ -17,7 +17,7 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const mysql = require('mysql2/promise');
 
-// ===================== CLIENT ===================
+// ===================== CLIENT =====================
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -28,9 +28,7 @@ const client = new Client({
   partials: ['CHANNEL']
 });
 
-// ===================== DATABASE ====================
-const mysql = require('mysql2/promise');
-
+// ===================== DATABASE =====================
 const db = mysql.createPool({
   uri: process.env.DATABASE_URL,
   waitForConnections: true,
@@ -38,7 +36,7 @@ const db = mysql.createPool({
   ssl: { rejectUnauthorized: false }
 });
 
-
+console.log("✅ Database Pool Ready");
 
 // ===================== TEMP STORAGE =====================
 const verificationCodes = new Map();
@@ -80,7 +78,7 @@ client.on('guildMemberAdd', async member => {
 });
 
 // ===================== READY =====================
-client.once('clientReady', async () => {
+client.once('ready', async () => {
   console.log(`✅ Bot online as ${client.user.tag}`);
 
   try {
@@ -130,7 +128,7 @@ client.once('clientReady', async () => {
 client.on(Events.InteractionCreate, async interaction => {
   try {
 
-    // ===== VERIFY BUTTON =====
+    // VERIFY BUTTON
     if (interaction.isButton() && interaction.customId === 'verify_start') {
       await interaction.deferReply({ ephemeral: true });
 
@@ -148,7 +146,7 @@ client.on(Events.InteractionCreate, async interaction => {
       }
     }
 
-    // ===== GET EMAIL MODAL =====
+    // GET EMAIL MODAL
     if (interaction.isButton() && interaction.customId === 'get_email') {
       const modal = new ModalBuilder()
         .setCustomId('email_lookup_modal')
@@ -167,7 +165,7 @@ client.on(Events.InteractionCreate, async interaction => {
       return interaction.showModal(modal);
     }
 
-    // ===== EMAIL LOOKUP SUBMIT =====
+    // EMAIL LOOKUP
     if (interaction.isModalSubmit() && interaction.customId === 'email_lookup_modal') {
       await interaction.deferReply({ ephemeral: true });
 
@@ -184,7 +182,7 @@ client.on(Events.InteractionCreate, async interaction => {
       return interaction.editReply(`📧 الإيميل الجامعي:\n**${rows[0].email}**`);
     }
 
-    // ===== BAN / UNBAN BUTTON =====
+    // BAN / UNBAN MODALS
     if (interaction.isButton() && ['ban_user', 'unban_user'].includes(interaction.customId)) {
       const modal = new ModalBuilder()
         .setCustomId(interaction.customId === 'ban_user' ? 'ban_modal' : 'unban_modal')
@@ -271,7 +269,7 @@ client.on('messageCreate', async message => {
     await db.query(
       `INSERT INTO verified_users (discord_id, email, banned)
        VALUES (?, ?, 0)
-       ON DUPLICATE KEY UPDATE email = VALUES(email)`,
+       ON DUPLICATE KEY UPDATE email = VALUES(email)` ,
       [message.author.id, userData.email]
     );
 
@@ -313,18 +311,13 @@ async function handleBan(interaction, input) {
 
   await member.roles.set([bannedRole]);
 
-  await db.query(
-    'UPDATE verified_users SET banned = 1 WHERE discord_id = ?',
-    [userId]
-  );
+  await db.query('UPDATE verified_users SET banned = 1 WHERE discord_id = ?', [userId]);
 
   try {
-    await member.send(
-      `🚫 لقد تم حظرك من السيرفر بسبب مخالفة القوانين.\n\n🎫 افتح Ticket إذا عندك اعتراض`
-    );
+    await member.send('🚫 لقد تم حظرك من السيرفر بسبب مخالفة القوانين.');
   } catch {}
 
-  return interaction.editReply('🚫 تم حظر المستخدم وإبلاغه');
+  return interaction.editReply('🚫 تم حظر المستخدم');
 }
 
 // ===================== UNBAN =====================
@@ -349,7 +342,7 @@ async function handleUnban(interaction, input) {
   await member.roles.set(memberRole ? [memberRole] : []);
   await db.query('UPDATE verified_users SET banned = 0 WHERE discord_id = ?', [userId]);
 
-  return interaction.editReply('✅ تم فك الحظر بنجاح');
+  return interaction.editReply('✅ تم فك الحظر');
 }
 
 // ===================== LOGIN =====================
@@ -359,5 +352,3 @@ if (!process.env.DISCORD_TOKEN) {
 }
 
 client.login(process.env.DISCORD_TOKEN);
-
-
