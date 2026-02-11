@@ -66,9 +66,7 @@ client.on('guildMemberAdd', async member => {
       return;
     }
 
-    if (activationRole) {
-      await member.roles.set([activationRole]);
-    }
+    if (activationRole) await member.roles.set([activationRole]);
 
   } catch (err) {
     console.error('Join error:', err);
@@ -126,7 +124,10 @@ client.once('clientReady', async () => {
 client.on(Events.InteractionCreate, async interaction => {
   try {
 
+    // ===== VERIFY BUTTON =====
     if (interaction.isButton() && interaction.customId === 'verify_start') {
+      await interaction.deferReply({ ephemeral: true });
+
       try {
         await interaction.user.send(
           '🎓 أرسل إيميلك الجامعي:\n`name@students.ptuk.edu.ps`'
@@ -134,13 +135,14 @@ client.on(Events.InteractionCreate, async interaction => {
 
         verificationCodes.set(interaction.user.id, { step: 'email' });
 
-        return interaction.reply({ content: '📩 تم إرسال رسالة في الخاص', ephemeral: true });
+        return interaction.editReply('📩 تم إرسال رسالة في الخاص');
 
       } catch {
-        return interaction.reply({ content: '❌ افتح الخاص مع البوت أولاً', ephemeral: true });
+        return interaction.editReply('❌ افتح الخاص مع البوت أولاً');
       }
     }
 
+    // ===== GET EMAIL MODAL =====
     if (interaction.isButton() && interaction.customId === 'get_email') {
       const modal = new ModalBuilder()
         .setCustomId('email_lookup_modal')
@@ -159,7 +161,10 @@ client.on(Events.InteractionCreate, async interaction => {
       return interaction.showModal(modal);
     }
 
+    // ===== EMAIL LOOKUP SUBMIT =====
     if (interaction.isModalSubmit() && interaction.customId === 'email_lookup_modal') {
+      await interaction.deferReply({ ephemeral: true });
+
       const userId = interaction.fields.getTextInputValue('discord_id_input');
 
       const [rows] = await db.query(
@@ -168,14 +173,12 @@ client.on(Events.InteractionCreate, async interaction => {
       );
 
       if (!rows.length)
-        return interaction.reply({ content: '❌ لا يوجد إيميل مرتبط', ephemeral: true });
+        return interaction.editReply('❌ لا يوجد إيميل مرتبط');
 
-      return interaction.reply({
-        content: `📧 الإيميل الجامعي:\n**${rows[0].email}**`,
-        ephemeral: true
-      });
+      return interaction.editReply(`📧 الإيميل الجامعي:\n**${rows[0].email}**`);
     }
 
+    // ===== BAN / UNBAN BUTTON =====
     if (interaction.isButton() && ['ban_user', 'unban_user'].includes(interaction.customId)) {
       const modal = new ModalBuilder()
         .setCustomId(interaction.customId === 'ban_user' ? 'ban_modal' : 'unban_modal')
@@ -195,10 +198,12 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 
     if (interaction.isModalSubmit() && interaction.customId === 'ban_modal') {
+      await interaction.deferReply({ ephemeral: true });
       return handleBan(interaction, interaction.fields.getTextInputValue('input'));
     }
 
     if (interaction.isModalSubmit() && interaction.customId === 'unban_modal') {
+      await interaction.deferReply({ ephemeral: true });
       return handleUnban(interaction, interaction.fields.getTextInputValue('input'));
     }
 
@@ -277,12 +282,10 @@ client.on('messageCreate', async message => {
 });
 
 // ===================== BAN =====================
-// ===================== BAN =====================
 async function handleBan(interaction, input) {
   const guild = interaction.guild;
   let userId = input;
 
-  // إذا الإدخال إيميل
   if (input.includes('@')) {
     const [rows] = await db.query(
       'SELECT discord_id FROM verified_users WHERE email = ?',
@@ -292,41 +295,30 @@ async function handleBan(interaction, input) {
   }
 
   if (!userId)
-    return interaction.reply({ content: '❌ المستخدم غير موجود', ephemeral: true });
+    return interaction.editReply('❌ المستخدم غير موجود');
 
   const member = await guild.members.fetch(userId).catch(() => null);
   if (!member)
-    return interaction.reply({ content: '❌ العضو غير موجود بالسيرفر', ephemeral: true });
+    return interaction.editReply('❌ العضو غير موجود بالسيرفر');
 
   const bannedRole = guild.roles.cache.find(r => r.name === 'banned');
   if (!bannedRole)
-    return interaction.reply({ content: '❌ رول banned غير موجود', ephemeral: true });
+    return interaction.editReply('❌ رول banned غير موجود');
 
-  // إعطاء رول الحظر
   await member.roles.set([bannedRole]);
 
-  // تحديث قاعدة البيانات
   await db.query(
     'UPDATE verified_users SET banned = 1 WHERE discord_id = ?',
     [userId]
   );
 
-  // 📩 إرسال رسالة خاصة للمستخدم
   try {
     await member.send(
-      `🚫 **لقد تم حظرك من السيرفر بسبب انتهاكك أحد القوانين.**\n\n` +
-      `📩 لأي استفسار توجه إلى:\n` +
-      `🎫 **Ticket → ticket → Create Ticket**\n\n` +
-      `🕒 سيتم الرد عليك قريبًا.`
+      `🚫 لقد تم حظرك من السيرفر بسبب مخالفة القوانين.\n\n🎫 افتح Ticket إذا عندك اعتراض`
     );
-  } catch {
-    console.log("⚠️ لم أتمكن من إرسال رسالة خاصة للمستخدم");
-  }
+  } catch {}
 
-  return interaction.reply({
-    content: '🚫 تم حظر المستخدم وإرسال رسالة له بنجاح',
-    ephemeral: true
-  });
+  return interaction.editReply('🚫 تم حظر المستخدم وإبلاغه');
 }
 
 // ===================== UNBAN =====================
@@ -344,14 +336,14 @@ async function handleUnban(interaction, input) {
 
   const member = await guild.members.fetch(userId).catch(() => null);
   if (!member)
-    return interaction.reply({ content: '❌ العضو غير موجود بالسيرفر', ephemeral: true });
+    return interaction.editReply('❌ العضو غير موجود بالسيرفر');
 
   const memberRole = guild.roles.cache.find(r => r.name === 'member');
 
   await member.roles.set(memberRole ? [memberRole] : []);
   await db.query('UPDATE verified_users SET banned = 0 WHERE discord_id = ?', [userId]);
 
-  return interaction.reply({ content: '✅ تم فك الحظر بنجاح', ephemeral: true });
+  return interaction.editReply('✅ تم فك الحظر بنجاح');
 }
 
 // ===================== LOGIN =====================
@@ -361,8 +353,3 @@ if (!process.env.DISCORD_TOKEN) {
 }
 
 client.login(process.env.DISCORD_TOKEN);
-
-
-
-
-
