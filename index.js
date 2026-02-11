@@ -277,10 +277,12 @@ client.on('messageCreate', async message => {
 });
 
 // ===================== BAN =====================
+// ===================== BAN =====================
 async function handleBan(interaction, input) {
   const guild = interaction.guild;
   let userId = input;
 
+  // إذا الإدخال إيميل
   if (input.includes('@')) {
     const [rows] = await db.query(
       'SELECT discord_id FROM verified_users WHERE email = ?',
@@ -297,12 +299,36 @@ async function handleBan(interaction, input) {
     return interaction.reply({ content: '❌ العضو غير موجود بالسيرفر', ephemeral: true });
 
   const bannedRole = guild.roles.cache.find(r => r.name === 'banned');
+  if (!bannedRole)
+    return interaction.reply({ content: '❌ رول banned غير موجود', ephemeral: true });
 
+  // إعطاء رول الحظر
   await member.roles.set([bannedRole]);
-  await db.query('UPDATE verified_users SET banned = 1 WHERE discord_id = ?', [userId]);
 
-  return interaction.reply({ content: '🚫 تم حظر المستخدم بنجاح', ephemeral: true });
+  // تحديث قاعدة البيانات
+  await db.query(
+    'UPDATE verified_users SET banned = 1 WHERE discord_id = ?',
+    [userId]
+  );
+
+  // 📩 إرسال رسالة خاصة للمستخدم
+  try {
+    await member.send(
+      `🚫 **لقد تم حظرك من السيرفر بسبب انتهاكك أحد القوانين.**\n\n` +
+      `📩 لأي استفسار توجه إلى:\n` +
+      `🎫 **Ticket → ticket → Create Ticket**\n\n` +
+      `🕒 سيتم الرد عليك قريبًا.`
+    );
+  } catch {
+    console.log("⚠️ لم أتمكن من إرسال رسالة خاصة للمستخدم");
+  }
+
+  return interaction.reply({
+    content: '🚫 تم حظر المستخدم وإرسال رسالة له بنجاح',
+    ephemeral: true
+  });
 }
+
 
 // ===================== UNBAN =====================
 async function handleUnban(interaction, input) {
@@ -336,6 +362,7 @@ if (!process.env.DISCORD_TOKEN) {
 }
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
