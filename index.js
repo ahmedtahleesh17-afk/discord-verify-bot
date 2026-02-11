@@ -29,7 +29,7 @@ const client = new Client({
 });
 
 // ===================== DATABASE =====================
-const mysql = require('mysql2/promise');
+
 
 const db = mysql.createPool({
   host: process.env.MYSQL_HOST,
@@ -356,4 +356,5 @@ if (!process.env.DISCORD_TOKEN) {
 }
 
 client.login(process.env.DISCORD_TOKEN);
+
 
