@@ -28,7 +28,7 @@ const client = new Client({
   partials: ['CHANNEL']
 });
 
-// ===================== DATABASE =====================
+// ===================== DATABASE ====================
 const db = mysql.createPool({
   uri: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
@@ -336,4 +336,5 @@ if (!process.env.DISCORD_TOKEN) {
 }
 
 client.login(process.env.DISCORD_TOKEN);
+
 
