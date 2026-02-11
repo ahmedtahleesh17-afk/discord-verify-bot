@@ -17,7 +17,7 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const mysql = require('mysql2/promise');
 
-// ===================== CLIENT ===================
+// ===================== CLIENT ==================
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -353,3 +353,4 @@ if (!process.env.DISCORD_TOKEN) {
 }
 
 client.login(process.env.DISCORD_TOKEN);
+
