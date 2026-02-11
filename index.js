@@ -329,7 +329,6 @@ async function handleBan(interaction, input) {
   });
 }
 
-
 // ===================== UNBAN =====================
 async function handleUnban(interaction, input) {
   const guild = interaction.guild;
@@ -362,6 +361,7 @@ if (!process.env.DISCORD_TOKEN) {
 }
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
