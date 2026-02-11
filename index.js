@@ -29,18 +29,25 @@ const client = new Client({
 });
 
 // ===================== DATABASE =====================
-
-
 const db = mysql.createPool({
   host: process.env.MYSQL_HOST,
   user: process.env.MYSQL_USER,
   password: process.env.MYSQL_PASSWORD,
   database: process.env.MYSQL_DATABASE,
-  port: process.env.MYSQL_PORT,
+  port: Number(process.env.MYSQL_PORT || 3306),
   waitForConnections: true,
   connectionLimit: 5
 });
 
+// اختبار الاتصال
+(async () => {
+  try {
+    await db.query("SELECT 1");
+    console.log("✅ MySQL Connected Successfully");
+  } catch (err) {
+    console.error("❌ MySQL Connection Failed:", err.message);
+  }
+})();
 
 // ===================== TEMP STORAGE =====================
 const verificationCodes = new Map();
@@ -186,7 +193,7 @@ client.on(Events.InteractionCreate, async interaction => {
       return interaction.editReply(`📧 الإيميل الجامعي:\n**${rows[0].email}**`);
     }
 
-    // BAN / UNBAN MODALS
+    // BAN / UNBAN
     if (interaction.isButton() && ['ban_user', 'unban_user'].includes(interaction.customId)) {
       const modal = new ModalBuilder()
         .setCustomId(interaction.customId === 'ban_user' ? 'ban_modal' : 'unban_modal')
@@ -314,7 +321,6 @@ async function handleBan(interaction, input) {
     return interaction.editReply('❌ رول banned غير موجود');
 
   await member.roles.set([bannedRole]);
-
   await db.query('UPDATE verified_users SET banned = 1 WHERE discord_id = ?', [userId]);
 
   try {
@@ -356,5 +362,3 @@ if (!process.env.DISCORD_TOKEN) {
 }
 
 client.login(process.env.DISCORD_TOKEN);
-
-
