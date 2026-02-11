@@ -29,6 +29,8 @@ const client = new Client({
 });
 
 // ===================== DATABASE ====================
+const mysql = require('mysql2/promise');
+
 const db = mysql.createPool({
   uri: process.env.DATABASE_URL,
   waitForConnections: true,
@@ -36,14 +38,6 @@ const db = mysql.createPool({
   ssl: { rejectUnauthorized: false }
 });
 
-(async () => {
-  try {
-    await db.query("SELECT 1");
-    console.log("✅ MySQL Connected");
-  } catch (err) {
-    console.error("❌ MySQL FAILED:", err.message);
-  }
-})();
 
 
 // ===================== TEMP STORAGE =====================
@@ -365,4 +359,5 @@ if (!process.env.DISCORD_TOKEN) {
 }
 
 client.login(process.env.DISCORD_TOKEN);
+
 
