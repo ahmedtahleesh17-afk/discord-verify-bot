@@ -89,7 +89,8 @@ client.on('guildMemberAdd', async member => {
 });
 
 // ===================== READY =====================
-client.once('ready', async () => {
+// ===================== READY =====================
+client.once(Events.ClientReady, async () => {
   console.log(`✅ Bot online as ${client.user.tag}`);
 
   try {
@@ -134,6 +135,7 @@ client.once('ready', async () => {
     console.error('Panel error:', err);
   }
 });
+
 
 // ===================== INTERACTIONS =====================
 client.on(Events.InteractionCreate, async interaction => {
@@ -362,4 +364,5 @@ if (!process.env.DISCORD_TOKEN) {
 }
 
 client.login(process.env.DISCORD_TOKEN);
+
 
