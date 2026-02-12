@@ -28,7 +28,7 @@ const client = new Client({
   partials: ['CHANNEL']
 });
 
-// ===================== DATABASE =====================
+// ===================== DATABASE ====================
 const db = mysql.createPool({
   host: process.env.MYSQL_HOST,
   user: process.env.MYSQL_USER,
@@ -362,3 +362,4 @@ if (!process.env.DISCORD_TOKEN) {
 }
 
 client.login(process.env.DISCORD_TOKEN);
+
