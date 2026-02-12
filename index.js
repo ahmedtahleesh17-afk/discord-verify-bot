@@ -343,6 +343,7 @@ async function handleUnban(interaction, input) {
   const guild = interaction.guild;
   let userId = input;
 
+  // إذا الإدخال كان إيميل → نجيب Discord ID
   if (input.includes('@')) {
     const [rows] = await db.query(
       'SELECT discord_id FROM verified_users WHERE email = ?',
@@ -351,20 +352,35 @@ async function handleUnban(interaction, input) {
     userId = rows[0]?.discord_id;
   }
 
+  if (!userId)
+    return interaction.editReply('❌ المستخدم غير موجود');
+
   const member = await guild.members.fetch(userId).catch(() => null);
   if (!member)
     return interaction.editReply('❌ العضو غير موجود بالسيرفر');
 
+  const bannedRole = guild.roles.cache.find(r => r.name === 'banned');
   const memberRole = guild.roles.cache.find(r => r.name === 'member');
 
-  // إعادة العضو بدون حذف باقي الرولات
+  // إزالة رول الحظر
+  if (bannedRole && member.roles.cache.has(bannedRole.id)) {
+    await member.roles.remove(bannedRole);
+  }
+
+  // إضافة رول العضو بدون حذف باقي الرولات
   if (memberRole && !member.roles.cache.has(memberRole.id)) {
     await member.roles.add(memberRole);
   }
 
+  // تحديث قاعدة البيانات
   await db.query('UPDATE verified_users SET banned = 0 WHERE discord_id = ?', [userId]);
 
-  return interaction.editReply('✅ تم فك الحظر');
+  // إرسال رسالة للعضو (اختياري)
+  try {
+    await member.send('✅ تم فك الحظر عنك ويمكنك استخدام السيرفر مجددًا');
+  } catch {}
+
+  return interaction.editReply('✅ تم فك الحظر وإزالة رول banned');
 }
 
 // ===================== LOGIN =====================
@@ -374,3 +390,4 @@ if (!process.env.DISCORD_TOKEN) {
 }
 
 client.login(process.env.DISCORD_TOKEN);
+
