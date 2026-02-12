@@ -71,24 +71,28 @@ client.on('guildMemberAdd', async member => {
       [member.id]
     );
 
+    // إذا محظور
     if (rows.length && rows[0].banned == 1) {
-      if (bannedRole) await member.roles.set([bannedRole]);
+      if (bannedRole) await member.roles.add(bannedRole);
       return;
     }
 
+    // إذا مفعل سابقًا
     if (rows.length && rows[0].banned == 0) {
-      if (memberRole) await member.roles.set([memberRole]);
+      if (memberRole) await member.roles.add(memberRole);
       return;
     }
 
-    if (activationRole) await member.roles.set([activationRole]);
+    // عضو جديد → نعطيه Activation فقط بدون حذف باقي الرولات
+    if (activationRole && !member.roles.cache.has(activationRole.id)) {
+      await member.roles.add(activationRole);
+    }
 
   } catch (err) {
     console.error('Join error:', err);
   }
 });
 
-// ===================== READY =====================
 // ===================== READY =====================
 client.once(Events.ClientReady, async () => {
   console.log(`✅ Bot online as ${client.user.tag}`);
@@ -136,7 +140,6 @@ client.once(Events.ClientReady, async () => {
   }
 });
 
-
 // ===================== INTERACTIONS =====================
 client.on(Events.InteractionCreate, async interaction => {
   try {
@@ -146,12 +149,8 @@ client.on(Events.InteractionCreate, async interaction => {
       await interaction.deferReply({ ephemeral: true });
 
       try {
-        await interaction.user.send(
-          '🎓 أرسل إيميلك الجامعي:\n`name@students.ptuk.edu.ps`'
-        );
-
+        await interaction.user.send('🎓 أرسل إيميلك الجامعي:\n`name@students.ptuk.edu.ps`');
         verificationCodes.set(interaction.user.id, { step: 'email' });
-
         return interaction.editReply('📩 تم إرسال رسالة في الخاص');
 
       } catch {
@@ -195,7 +194,7 @@ client.on(Events.InteractionCreate, async interaction => {
       return interaction.editReply(`📧 الإيميل الجامعي:\n**${rows[0].email}**`);
     }
 
-    // BAN / UNBAN
+    // BAN / UNBAN MODALS
     if (interaction.isButton() && ['ban_user', 'unban_user'].includes(interaction.customId)) {
       const modal = new ModalBuilder()
         .setCustomId(interaction.customId === 'ban_user' ? 'ban_modal' : 'unban_modal')
@@ -236,6 +235,7 @@ client.on('messageCreate', async message => {
   const userData = verificationCodes.get(message.author.id);
   if (!userData) return;
 
+  // EMAIL STEP
   if (userData.step === 'email') {
     const email = message.content.trim();
 
@@ -270,6 +270,7 @@ client.on('messageCreate', async message => {
     }
   }
 
+  // CODE STEP
   if (userData.step === 'code') {
     if (message.content.trim() !== userData.code.toString())
       return message.reply('❌ الكود خاطئ');
@@ -289,8 +290,15 @@ client.on('messageCreate', async message => {
     const activationRole = guild.roles.cache.find(r => r.name === 'Activation required');
     const memberRole = guild.roles.cache.find(r => r.name === 'member');
 
-    if (activationRole) await member.roles.remove(activationRole);
-    if (memberRole) await member.roles.set([memberRole]);
+    // إزالة رول التفعيل فقط
+    if (activationRole && member.roles.cache.has(activationRole.id)) {
+      await member.roles.remove(activationRole);
+    }
+
+    // إضافة رول العضو بدون حذف باقي الرولات
+    if (memberRole && !member.roles.cache.has(memberRole.id)) {
+      await member.roles.add(memberRole);
+    }
 
     verificationCodes.delete(message.author.id);
 
@@ -325,9 +333,7 @@ async function handleBan(interaction, input) {
   await member.roles.set([bannedRole]);
   await db.query('UPDATE verified_users SET banned = 1 WHERE discord_id = ?', [userId]);
 
-  try {
-    await member.send('🚫 لقد تم حظرك من السيرفر بسبب مخالفة القوانين.');
-  } catch {}
+  try { await member.send('🚫 لقد تم حظرك من السيرفر بسبب مخالفة القوانين.'); } catch {}
 
   return interaction.editReply('🚫 تم حظر المستخدم');
 }
@@ -351,7 +357,11 @@ async function handleUnban(interaction, input) {
 
   const memberRole = guild.roles.cache.find(r => r.name === 'member');
 
-  await member.roles.set(memberRole ? [memberRole] : []);
+  // إعادة العضو بدون حذف باقي الرولات
+  if (memberRole && !member.roles.cache.has(memberRole.id)) {
+    await member.roles.add(memberRole);
+  }
+
   await db.query('UPDATE verified_users SET banned = 0 WHERE discord_id = ?', [userId]);
 
   return interaction.editReply('✅ تم فك الحظر');
@@ -364,5 +374,3 @@ if (!process.env.DISCORD_TOKEN) {
 }
 
 client.login(process.env.DISCORD_TOKEN);
-
-
