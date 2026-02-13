@@ -141,12 +141,14 @@ client.once(Events.ClientReady, async () => {
 });
 
 // ===================== INTERACTIONS =====================
+// ===================== INTERACTIONS =====================
 client.on(Events.InteractionCreate, async interaction => {
   try {
 
     // VERIFY BUTTON
     if (interaction.isButton() && interaction.customId === 'verify_start') {
-      await interaction.deferReply({ ephemeral: true });
+      if (!interaction.deferred && !interaction.replied)
+        await interaction.deferReply({ flags: 64 });
 
       try {
         await interaction.user.send('🎓 أرسل إيميلك الجامعي:\n`name@students.ptuk.edu.ps`');
@@ -160,6 +162,9 @@ client.on(Events.InteractionCreate, async interaction => {
 
     // GET EMAIL MODAL
     if (interaction.isButton() && interaction.customId === 'get_email') {
+
+      if (interaction.deferred || interaction.replied) return;
+
       const modal = new ModalBuilder()
         .setCustomId('email_lookup_modal')
         .setTitle('📧 Get Student Email');
@@ -174,12 +179,14 @@ client.on(Events.InteractionCreate, async interaction => {
         )
       );
 
-      return interaction.showModal(modal);
+      return interaction.showModal(modal).catch(() => {});
     }
 
     // EMAIL LOOKUP
     if (interaction.isModalSubmit() && interaction.customId === 'email_lookup_modal') {
-      await interaction.deferReply({ ephemeral: true });
+
+      if (!interaction.deferred && !interaction.replied)
+        await interaction.deferReply({ flags: 64 });
 
       const userId = interaction.fields.getTextInputValue('discord_id_input');
 
@@ -194,8 +201,11 @@ client.on(Events.InteractionCreate, async interaction => {
       return interaction.editReply(`📧 الإيميل الجامعي:\n**${rows[0].email}**`);
     }
 
-    // BAN / UNBAN MODALS
+    // BAN / UNBAN BUTTONS
     if (interaction.isButton() && ['ban_user', 'unban_user'].includes(interaction.customId)) {
+
+      if (interaction.deferred || interaction.replied) return;
+
       const modal = new ModalBuilder()
         .setCustomId(interaction.customId === 'ban_user' ? 'ban_modal' : 'unban_modal')
         .setTitle(interaction.customId === 'ban_user' ? '🚫 Ban User' : '✅ Unban User');
@@ -210,16 +220,22 @@ client.on(Events.InteractionCreate, async interaction => {
         )
       );
 
-      return interaction.showModal(modal);
+      return interaction.showModal(modal).catch(() => {});
     }
 
     if (interaction.isModalSubmit() && interaction.customId === 'ban_modal') {
-      await interaction.deferReply({ ephemeral: true });
+
+      if (!interaction.deferred && !interaction.replied)
+        await interaction.deferReply({ flags: 64 });
+
       return handleBan(interaction, interaction.fields.getTextInputValue('input'));
     }
 
     if (interaction.isModalSubmit() && interaction.customId === 'unban_modal') {
-      await interaction.deferReply({ ephemeral: true });
+
+      if (!interaction.deferred && !interaction.replied)
+        await interaction.deferReply({ flags: 64 });
+
       return handleUnban(interaction, interaction.fields.getTextInputValue('input'));
     }
 
@@ -390,4 +406,5 @@ if (!process.env.DISCORD_TOKEN) {
 }
 
 client.login(process.env.DISCORD_TOKEN);
+
 
