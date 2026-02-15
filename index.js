@@ -277,11 +277,7 @@ client.on('messageCreate', async message => {
         subject: 'PTUK Verification Code',
         html: `<h2>رمز التحقق</h2><h1>${code}</h1>`
       });
-return message.reply(
-'📨 تم إرسال \u200EActivation Code\u200E إلى الايميل الجامعي الخاص بحسابك.\n\n' +
-'📩 يرجى تسجيل الدخول إلى \u200E(Microsoft Outlook)\u200E:\n' +
-'\u200Ehttps://outlook.live.com/\u200E'
-);
+return message.reply('📨 تم إرسال كود التحقق إلى بريدك الجامعي');
 
 
 
@@ -411,6 +407,7 @@ if (!process.env.DISCORD_TOKEN) {
 }
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
