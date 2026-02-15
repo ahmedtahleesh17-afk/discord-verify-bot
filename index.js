@@ -278,10 +278,11 @@ client.on('messageCreate', async message => {
         html: `<h2>رمز التحقق</h2><h1>${code}</h1>`
       });
 return message.reply(
-'📨 تم إرسال Activation Code إلى الايميل الجامعي الخاص بحسابك.\n\n' +
-'📩 يرجى تسجيل الدخول إلى (Microsoft Outlook):\n' +
-'https://outlook.live.com/'
+'📨 تم إرسال \u200EActivation Code\u200E إلى الايميل الجامعي الخاص بحسابك.\n\n' +
+'📩 يرجى تسجيل الدخول إلى \u200E(Microsoft Outlook)\u200E:\n' +
+'\u200Ehttps://outlook.live.com/\u200E'
 );
+
 
 
     } catch {
@@ -410,6 +411,7 @@ if (!process.env.DISCORD_TOKEN) {
 }
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
