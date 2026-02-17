@@ -319,7 +319,7 @@ return message.reply('📨 تم إرسال كود التحقق إلى بريدك
 
     verificationCodes.delete(message.author.id);
 
-    return message.reply('🎉 تم تفعيل حسابك بنجاح — مرحبًا بك!\nhttps://discord.gg/V6asSewF2V');
+    return message.reply('🎉 تم تفعيل حسابك بنجاح — مرحبًا بك!\nhttps://discord.gg/VF3Kr2Rbta');
   }
 });
 
@@ -407,6 +407,7 @@ if (!process.env.DISCORD_TOKEN) {
 }
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
