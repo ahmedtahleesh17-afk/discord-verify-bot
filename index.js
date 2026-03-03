@@ -151,7 +151,13 @@ client.on(Events.InteractionCreate, async interaction => {
         await interaction.deferReply({ flags: 64 });
 
       try {
-        await interaction.user.send('🎓 أرسل إيميلك الجامعي:\n`name@students.ptuk.edu.ps`');
+       await interaction.user.send({
+  content: `📹 **شاهد الفيديو التعريفي لطريقة تفعيل حسابك في السيرفر:**
+https://www.youtube.com/shorts/MsUS0BXnjjE
+
+🎓 **أرسل إيميلك الجامعي:**
+\`name@students.ptuk.edu.ps\``
+});
         verificationCodes.set(interaction.user.id, { step: 'email' });
         return interaction.editReply('📩 تم إرسال رسالة في الخاص');
 
@@ -407,6 +413,7 @@ if (!process.env.DISCORD_TOKEN) {
 }
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
