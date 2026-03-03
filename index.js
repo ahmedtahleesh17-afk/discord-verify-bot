@@ -277,7 +277,7 @@ client.on('messageCreate', async message => {
         subject: 'PTUK Verification Code',
         html: `<h2>رمز التحقق</h2><h1>${code}</h1>`
       });
-return message.reply('📨 تم إرسال كود التحقق إلى بريدك الجامعي');
+return message.reply('📨 تم إرسال كود التحقق إلى بريدك الجامعي\n\n**ملاحظة: يرجى التحقق من قسم البريد غير الهام (Junk/Spam) فقد تجد الرمز هناك.**');
 
 
 
@@ -407,6 +407,7 @@ if (!process.env.DISCORD_TOKEN) {
 }
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
