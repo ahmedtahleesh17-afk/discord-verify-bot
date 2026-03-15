@@ -157,12 +157,31 @@ client.on('messageCreate', async (message) => {
   if (message.content === '!java ABC123') {
 
     if (message.member.roles.cache.has(roleID)) {
-      return message.reply("أنت تملك الرول بالفعل.");
+
+      await message.delete().catch(()=>{});
+
+      const reply = await message.channel.send({
+        content: `✅ ${message.author} أنت تملك الرول بالفعل.`
+      });
+
+      setTimeout(() => reply.delete().catch(()=>{}), 5000);
+      return;
     }
 
     await message.member.roles.add(roleID);
 
-    message.reply("تم إعطاؤك رول طالب الجافا ✅");
+    // حذف رسالة الكود
+    await message.delete().catch(()=>{});
+
+    // إرسال رسالة تأكيد
+    const reply = await message.channel.send({
+      content: `✅ ${message.author} تم إعطاؤك رول طالب الجافا`
+    });
+
+    // حذف رسالة التأكيد بعد 5 ثواني
+    setTimeout(() => {
+      reply.delete().catch(()=>{});
+    }, 5000);
 
   }
 
