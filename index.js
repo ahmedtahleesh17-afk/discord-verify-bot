@@ -140,7 +140,9 @@ client.once(Events.ClientReady, async () => {
   }
 });
 
-// ==client.on('messageCreate', async (message) => {
+// ===================== INTERACTIONS =====================
+
+client.on('messageCreate', async (message) => {
 
   const allowedChannel = "1478160543230595193";
   const roleID = "1480535231479025776";
@@ -158,7 +160,7 @@ client.once(Events.ClientReady, async () => {
     message.reply("تم إعطاؤك رول طالب الجافا ✅");
   }
 
-});=================== INTERACTIONS =====================
+});
 
 // ===================== INTERACTIONS =====================
 client.on(Events.InteractionCreate, async interaction => {
@@ -436,7 +438,6 @@ if (!process.env.DISCORD_TOKEN) {
 }
 
 client.login(process.env.DISCORD_TOKEN);
-
 
 
 
