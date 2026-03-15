@@ -141,6 +141,24 @@ client.once(Events.ClientReady, async () => {
 });
 
 // ===================== INTERACTIONS =====================
+client.on('messageCreate', async (message) => {
+
+  const allowedChannel = "1478160543230595193"; // ID القناة
+
+  if (message.channel.id !== allowedChannel) return;
+
+  if (message.content === '!java ABC123') {
+
+    const role = message.guild.roles.cache.find(r => r.name === '🧑‍🎓┃JAVA Student');
+
+    if (!role) return;
+
+    await message.member.roles.add(role);
+
+    message.reply('تم إعطاؤك رول طالب الجافا ✅');
+  }
+
+});
 // ===================== INTERACTIONS =====================
 client.on(Events.InteractionCreate, async interaction => {
   try {
