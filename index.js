@@ -140,25 +140,26 @@ client.once(Events.ClientReady, async () => {
   }
 });
 
-// ===================== INTERACTIONS =====================
-client.on('messageCreate', async (message) => {
+// ==client.on('messageCreate', async (message) => {
 
-  const allowedChannel = "1478160543230595193"; // ID القناة
+  const allowedChannel = "1478160543230595193";
+  const roleID = "1480535231479025776";
 
   if (message.channel.id !== allowedChannel) return;
 
   if (message.content === '!java ABC123') {
 
-    const role = message.guild.roles.cache.find(r => r.name === '🧑‍🎓┃JAVA Student');
+    if (message.member.roles.cache.has(roleID)) {
+      return message.reply("أنت تملك الرول بالفعل.");
+    }
 
-    if (!role) return;
+    await message.member.roles.add(roleID);
 
-    await message.member.roles.add(role);
-
-    message.reply('تم إعطاؤك رول طالب الجافا ✅');
+    message.reply("تم إعطاؤك رول طالب الجافا ✅");
   }
 
-});
+});=================== INTERACTIONS =====================
+
 // ===================== INTERACTIONS =====================
 client.on(Events.InteractionCreate, async interaction => {
   try {
