@@ -170,7 +170,7 @@ client.on('messageCreate', async (message) => {
 
   if (message.author.bot) return;
 
-  const allowedChannel = "1478160543230595193";
+  const allowedChannel = "1479822682412552313";
   const roleID = "1480535231479025776";
 
   if (message.channel.id !== allowedChannel) return;
