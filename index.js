@@ -54,9 +54,9 @@ const db = mysql.createPool({
 const verificationCodes = new Map();
 
 // ===================== SERVER SETTINGS =====================
-const SERVER_ID = '1469423215196770468';
-const VERIFY_CHANNEL_ID = '1469452854535258232';
-const SELECT_CHANNEL_ID = '1470015706107084895';
+const SERVER_ID = '1469423215196770468';//تعديل
+const VERIFY_CHANNEL_ID = '1480579307783852165';//تعديل
+const SELECT_CHANNEL_ID = '1481824622394609754';//تعديل
 
 // ===================== AUTO ROLE =====================
 client.on('guildMemberAdd', async (member) => {
@@ -64,9 +64,9 @@ client.on('guildMemberAdd', async (member) => {
 
     const guild = member.guild;
 
-    const bannedRole = guild.roles.cache.find(r => r.name === 'banned');
-    const activationRole = guild.roles.cache.find(r => r.name === 'Activation required');
-    const memberRole = guild.roles.cache.find(r => r.name === 'member');
+    const bannedRole = guild.roles.cache.find(r => r.name === '‼️┃Banned');
+    const activationRole = guild.roles.cache.find(r => r.name === '❌┃Active');
+    const memberRole = guild.roles.cache.find(r => r.name === '🙋┃ Member');
 
     const [rows] = await db.query(
       'SELECT banned FROM verified_users WHERE discord_id = ?',
@@ -103,40 +103,61 @@ client.once(Events.ClientReady, async () => {
     const selectChannel = await client.channels.fetch(SELECT_CHANNEL_ID);
 
     await verifyChannel.send({
-      content: '🎓 اضغط للتحقق عبر الإيميل الجامعي',
+      content: '**فعل حسابك في مجتمع لجنة تكنولوجيا المعلومات والذكاء الأصطناعي**',
       components: [
         new ActionRowBuilder().addComponents(
           new ButtonBuilder()
             .setCustomId('verify_start')
-            .setLabel('Verify 🎓')
+            .setLabel('🧑‍🎓┃Verify')
             .setStyle(ButtonStyle.Success)
         )
       ]
     });
 
     await selectChannel.send({
-      content: '🛠️ أدوات الإدارة والتحكم بالمستخدمين',
-      components: [
-        new ActionRowBuilder().addComponents(
+  content: '🛠️ أدوات الإدارة والتحكم بالمستخدمين',
+  components: [
 
-          new ButtonBuilder()
-            .setCustomId('get_email')
-            .setLabel('📧 Get Student Email')
-            .setStyle(ButtonStyle.Primary),
+    new ActionRowBuilder().addComponents(
 
-          new ButtonBuilder()
-            .setCustomId('ban_user')
-            .setLabel('🚫 Ban User')
-            .setStyle(ButtonStyle.Danger),
+      new ButtonBuilder()
+        .setCustomId('get_email')
+        .setLabel('📧 Get Student Email')
+        .setStyle(ButtonStyle.Primary),
 
-          new ButtonBuilder()
-            .setCustomId('unban_user')
-            .setLabel('✅ Unban User')
-            .setStyle(ButtonStyle.Success)
+      new ButtonBuilder()
+        .setCustomId('ban_user')
+        .setLabel('🚫 Ban User')
+        .setStyle(ButtonStyle.Danger),
 
-        )
-      ]
-    });
+      new ButtonBuilder()
+        .setCustomId('unban_user')
+        .setLabel('✅ Unban User')
+        .setStyle(ButtonStyle.Success),
+
+      new ButtonBuilder()
+        .setCustomId('switch_roles')
+        .setLabel('🔄 Switch Roles')
+        .setStyle(ButtonStyle.Secondary),
+
+      new ButtonBuilder()
+        .setCustomId('close_server')
+        .setLabel('🔧 Close Server')
+        .setStyle(ButtonStyle.Danger)
+
+    ),
+
+    new ActionRowBuilder().addComponents(
+
+      new ButtonBuilder()
+        .setCustomId('open_server')
+        .setLabel('🟢 Open Server')
+        .setStyle(ButtonStyle.Success)
+
+    )
+
+  ]
+});
 
   } catch (err) {
     console.error('Panel error:', err);
@@ -158,14 +179,14 @@ client.on('messageCreate', async (message) => {
 
     if (message.member.roles.cache.has(roleID)) {
 
-      await message.delete().catch(()=>{});
+      await message.delete().catch(() => { });
 
       const reply = await message.channel.send({
         content: `✅ ${message.author} أنت تملك الرول بالفعل.`
       });
 
       // حذف الرسالة بعد 10 ثواني
-      setTimeout(() => reply.delete().catch(()=>{}), 10000);
+      setTimeout(() => reply.delete().catch(() => { }), 10000);
 
       return;
     }
@@ -173,7 +194,7 @@ client.on('messageCreate', async (message) => {
     await message.member.roles.add(roleID);
 
     // حذف رسالة الكود
-    await message.delete().catch(()=>{});
+    await message.delete().catch(() => { });
 
     const reply = await message.channel.send({
       content: `✅ ${message.author} تم إعطاؤك رول طالب الجافا`
@@ -181,7 +202,7 @@ client.on('messageCreate', async (message) => {
 
     // حذف رسالة التأكيد بعد 10 ثواني
     setTimeout(() => {
-      reply.delete().catch(()=>{});
+      reply.delete().catch(() => { });
     }, 10000);
 
   }
@@ -203,12 +224,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
       try {
 
         await interaction.user.send(
-`📹 **شاهد الفيديو التعريفي لطريقة تفعيل حسابك في السيرفر:**
+          `📹 **شاهد الفيديو التعريفي لطريقة تفعيل حسابك في السيرفر:**
 https://www.youtube.com/shorts/MsUS0BXnjjE`
         );
 
         await interaction.user.send(
-`🎓 **أرسل إيميلك الجامعي:**
+          `🎓 **أرسل إيميلك الجامعي:**
 \`name@students.ptuk.edu.ps\``
         );
 
@@ -241,7 +262,7 @@ https://www.youtube.com/shorts/MsUS0BXnjjE`
         )
       );
 
-      return interaction.showModal(modal).catch(() => {});
+      return interaction.showModal(modal).catch(() => { });
 
     }
 
@@ -268,7 +289,7 @@ https://www.youtube.com/shorts/MsUS0BXnjjE`
     }
 
     // ================= BAN / UNBAN BUTTON =================
-    if (interaction.isButton() && ['ban_user','unban_user'].includes(interaction.customId)) {
+    if (interaction.isButton() && ['ban_user', 'unban_user'].includes(interaction.customId)) {
 
       if (interaction.deferred || interaction.replied) return;
 
@@ -286,7 +307,7 @@ https://www.youtube.com/shorts/MsUS0BXnjjE`
         )
       );
 
-      return interaction.showModal(modal).catch(() => {});
+      return interaction.showModal(modal).catch(() => { });
 
     }
 
@@ -311,8 +332,150 @@ https://www.youtube.com/shorts/MsUS0BXnjjE`
       return handleUnban(interaction, interaction.fields.getTextInputValue('input'));
 
     }
+    // ================= CLOSE SERVER =================
+    if (interaction.isButton() && interaction.customId === 'close_server') {
 
-  } catch (err) {
+      await interaction.deferReply({ flags: 64 });
+
+      const guild = interaction.guild;
+
+      const closedRole = guild.roles.cache.find(r => r.name === "closed");
+
+      if (!closedRole)
+        return interaction.editReply("❌ Role 'closed' not found");
+
+      let count = 0;
+
+      for (const member of guild.members.cache.values()) {
+
+        if (!member.roles.cache.has(closedRole.id)) {
+
+          try {
+
+            await member.roles.add(closedRole);
+            count++;
+
+            await new Promise(r => setTimeout(r, 300));
+
+          } catch { }
+
+        }
+
+      }
+
+      interaction.editReply(`🔧 Server closed\n${count} members updated`);
+
+    }
+    // ================= OPEN SERVER =================
+    if (interaction.isButton() && interaction.customId === 'open_server') {
+
+      await interaction.deferReply({ flags: 64 });
+
+      const guild = interaction.guild;
+
+      const closedRole = guild.roles.cache.find(r => r.name === "closed");
+
+      if (!closedRole)
+        return interaction.editReply("❌ Role 'closed' not found");
+
+      let count = 0;
+
+      for (const member of guild.members.cache.values()) {
+
+        if (member.roles.cache.has(closedRole.id)) {
+
+          try {
+
+            await member.roles.remove(closedRole);
+            count++;
+
+            await new Promise(r => setTimeout(r, 300));
+
+          } catch { }
+
+        }
+
+      }
+
+      interaction.editReply(`🟢 Server opened\n${count} members updated`);
+
+    }
+    // ================= SWITCH ROLES =================
+    if (interaction.isButton() && interaction.customId === 'switch_roles') {
+
+      if (!interaction.deferred && !interaction.replied) {
+        await interaction.deferReply({ flags: 64 });
+      }
+
+      const guild = await client.guilds.fetch(SERVER_ID);
+      await guild.members.fetch();
+
+      const roleMap = {
+
+        "Leader": "👸┃Real Leader",
+        "Co-Leader": "🫅┃Real Co-Leader",
+        "Scientific Committee": "♾️┃Scientific Committee",
+        "Media Committee": "🎬┃Media Committee",
+        "Activities Committee": "🤹┃Activities Committee",
+        "Support": "🎗️┃Support Committee",
+        "banned": "‼️┃Banned",
+        "Coach": "🧑‍🏫┃Teacher",
+        "Activation required": "❌┃Active",
+        "Graduate": "🎖️┃Graduate",
+        "Fourth Year": "🏅┃4th",
+        "Third Year": "🥉┃3rd",
+        "Second Year": "🥈┃2nd",
+        "First Year": "🥇┃1st",
+        "Artificial intelligence": "🤖┃Artificial Intelligence",
+        "Computer science": "💻┃Computer Scince",
+        "Information security": "🛡️┃Information Security",
+        "Other": "❇️┃Other",
+        "Male": "♂️┃Male",
+        "Female": "♀️┃Female",
+        "member": "🙋┃ Member",
+        "BOTS": "🎰┃Bots",
+        "Admin": "🧑‍🔧┃Moderator",
+        "Committee": "👥┃Real Committee",
+      };
+
+      let switched = 0;
+
+      for (const member of guild.members.cache.values()) {
+
+        for (const oldRoleName in roleMap) {
+
+          const newRoleName = roleMap[oldRoleName];
+
+          const oldRole = guild.roles.cache.find(r => r.name === oldRoleName);
+          const newRole = guild.roles.cache.find(r => r.name === newRoleName);
+
+          if (!oldRole || !newRole) continue;
+
+          if (member.roles.cache.has(oldRole.id)) {
+
+            try {
+
+              await member.roles.remove(oldRole);
+              await member.roles.add(newRole);
+
+              switched++;
+
+            } catch { }
+
+          }
+
+        }
+
+      }
+
+      return interaction.editReply(`✅ تم استبدال ${switched} رول`);
+
+    }
+
+  }
+
+
+  catch (err) {
     console.error('Interaction error:', err);
   }
 
@@ -362,7 +525,7 @@ client.on('messageCreate', async (message) => {
       });
 
       return message.reply(
-`📨 تم إرسال كود التحقق إلى بريدك الجامعي
+        `📨 تم إرسال كود التحقق إلى بريدك الجامعي
 
 **ملاحظة: يرجى التحقق من قسم البريد غير الهام (Junk/Spam) فقد تجد الرمز هناك.**`
       );
@@ -391,14 +554,14 @@ client.on('messageCreate', async (message) => {
     }
 
     await db.query(
-`INSERT INTO verified_users (discord_id, email, banned)
+      `INSERT INTO verified_users (discord_id, email, banned)
 VALUES (?, ?, 0)
 ON DUPLICATE KEY UPDATE email = VALUES(email)`,
       [message.author.id, userData.email]
     );
 
-    const activationRole = guild.roles.cache.find(r => r.name === 'Activation required');
-    const memberRole = guild.roles.cache.find(r => r.name === 'member');
+    const activationRole = guild.roles.cache.find(r => r.name === '❌┃Active');
+    const memberRole = guild.roles.cache.find(r => r.name === '🙋┃ Member');
 
     if (activationRole && member.roles.cache.has(activationRole.id)) {
       await member.roles.remove(activationRole);
@@ -411,13 +574,118 @@ ON DUPLICATE KEY UPDATE email = VALUES(email)`,
     verificationCodes.delete(message.author.id);
 
     return message.reply(
-`🎉 تم تفعيل حسابك بنجاح — مرحبًا بك!
+      `🎉 تم تفعيل حسابك بنجاح — مرحبًا بك!
 https://discord.gg/VF3Kr2Rbta`
     );
 
   }
 
 });
+
+// ===================== BAN FUNCTION =====================
+async function handleBan(interaction, input) {
+
+  const guild = await client.guilds.fetch(SERVER_ID);
+  let member = null;
+
+  if (/^\d+$/.test(input)) {
+    member = await guild.members.fetch(input).catch(() => null);
+  }
+
+  const [rows] = await db.query(
+    'SELECT discord_id FROM verified_users WHERE email = ?',
+    [input]
+  );
+
+  if (!member && rows.length) {
+    member = await guild.members.fetch(rows[0].discord_id).catch(() => null);
+  }
+
+  if (!member) {
+    return interaction.editReply('❌ المستخدم غير موجود');
+  }
+
+  const bannedRole = guild.roles.cache.find(r => r.name === '‼️┃Banned');
+  const activationRole = guild.roles.cache.find(r => r.name === '❌┃Active');
+  const memberRole = guild.roles.cache.find(r => r.name === '🙋┃ Member');
+
+  try {
+
+    if (memberRole && member.roles.cache.has(memberRole.id)) {
+      await member.roles.remove(memberRole);
+    }
+
+    if (activationRole && member.roles.cache.has(activationRole.id)) {
+      await member.roles.remove(activationRole);
+    }
+
+    if (bannedRole && !member.roles.cache.has(bannedRole.id)) {
+      await member.roles.add(bannedRole);
+    }
+
+    await db.query(
+      'UPDATE verified_users SET banned = 1 WHERE discord_id = ?',
+      [member.id]
+    );
+
+    return interaction.editReply(`🚫 تم حظر ${member.user.tag}`);
+
+  } catch (err) {
+    console.error('Ban error:', err);
+    return interaction.editReply('❌ فشل تنفيذ الباند');
+  }
+
+}
+
+// ===================== UNBAN FUNCTION =====================
+async function handleUnban(interaction, input) {
+
+  const guild = await client.guilds.fetch(SERVER_ID);
+  let member = null;
+
+  if (/^\d+$/.test(input)) {
+    member = await guild.members.fetch(input).catch(() => null);
+  }
+
+  const [rows] = await db.query(
+    'SELECT discord_id FROM verified_users WHERE email = ?',
+    [input]
+  );
+
+  if (!member && rows.length) {
+    member = await guild.members.fetch(rows[0].discord_id).catch(() => null);
+  }
+
+  if (!member) {
+    return interaction.editReply('❌ المستخدم غير موجود');
+  }
+
+  const bannedRole = guild.roles.cache.find(r => r.name === '‼️┃Banned');
+  const memberRole = guild.roles.cache.find(r => r.name === '🙋┃ Member');
+
+  try {
+
+    if (bannedRole && member.roles.cache.has(bannedRole.id)) {
+      await member.roles.remove(bannedRole);
+    }
+
+    if (memberRole && !member.roles.cache.has(memberRole.id)) {
+      await member.roles.add(memberRole);
+    }
+
+    await db.query(
+      'UPDATE verified_users SET banned = 0 WHERE discord_id = ?',
+      [member.id]
+    );
+
+    return interaction.editReply(`✅ تم فك الحظر عن ${member.user.tag}`);
+
+  } catch (err) {
+    console.error('Unban error:', err);
+    return interaction.editReply('❌ فشل فك الحظر');
+  }
+
+}
 
 // ===================== LOGIN =====================
 if (!process.env.DISCORD_TOKEN) {
