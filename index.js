@@ -575,7 +575,7 @@ ON DUPLICATE KEY UPDATE email = VALUES(email)`,
 
     return message.reply(
       `🎉 تم تفعيل حسابك بنجاح — مرحبًا بك!
-https://discord.gg/VF3Kr2Rbta`
+https://discord.gg/duFDsDzvAf`
     );
 
   }
