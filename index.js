@@ -215,13 +215,8 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
   try {
     // إذا دخل فويس
     if (!oldState.channelId && newState.channelId) {
-
-      // تأكد إذا عليه Server Mute
-      if (newState.member.voice.serverMute) {
-        await newState.member.voice.setMute(false);
-        console.log(`Unmuted: ${newState.member.user.tag}`);
-      }
-
+      await newState.member.voice.setMute(false).catch(() => {});
+      console.log(`Force unmute: ${newState.member.user.tag}`);
     }
   } catch (err) {
     console.error(err);
