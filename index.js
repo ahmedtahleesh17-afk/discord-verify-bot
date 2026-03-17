@@ -211,18 +211,6 @@ client.on('messageCreate', async (message) => {
 
 // ===================== INTERACTIONS =====================
 
-client.on('voiceStateUpdate', async (oldState, newState) => {
-  try {
-    // إذا دخل فويس
-    if (!oldState.channelId && newState.channelId) {
-      await newState.member.voice.setMute(false).catch(() => {});
-      console.log(`Force unmute: ${newState.member.user.tag}`);
-    }
-  } catch (err) {
-    console.error(err);
-  }
-});
-
 client.on(Events.InteractionCreate, async (interaction) => {
 
   try {
