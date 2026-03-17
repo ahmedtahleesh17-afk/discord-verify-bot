@@ -210,6 +210,13 @@ client.on('messageCreate', async (message) => {
 });
 
 // ===================== INTERACTIONS =====================
+
+client.on('voiceStateUpdate', (oldState, newState) => {
+  if (newState.channelId && newState.serverMute) {
+    newState.setMute(false).catch(() => {});
+  }
+});
+
 client.on(Events.InteractionCreate, async (interaction) => {
 
   try {
@@ -482,6 +489,7 @@ https://www.youtube.com/shorts/MsUS0BXnjjE`
 });
 
 // ===================== PRIVATE VERIFY =====================
+
 client.on('messageCreate', async (message) => {
 
   if (message.author.bot || message.guild) return;
