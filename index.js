@@ -209,6 +209,47 @@ client.on('messageCreate', async (message) => {
 
 });
 
+// ===================== PS ROLE COMMAND =====================
+
+client.on('messageCreate', async (message) => {
+
+  if (message.author.bot) return;
+
+  const allowedChannel = "1479822682412552313"; // نفس الروم
+  const roleID = "1486367831368138853"; // رول Problem Solving
+
+  if (message.channel.id !== allowedChannel) return;
+
+  if (message.content === '!ps.IT&AI-2026') { // غيرت الكود عشان يختلف
+
+    if (message.member.roles.cache.has(roleID)) {
+
+      await message.delete().catch(() => { });
+
+      const reply = await message.channel.send({
+        content: `✅ ${message.author} أنت تملك الرول بالفعل.`
+      });
+
+      setTimeout(() => reply.delete().catch(() => { }), 10000);
+      return;
+    }
+
+    await message.member.roles.add(roleID);
+
+    await message.delete().catch(() => { });
+
+    const reply = await message.channel.send({
+      content: `✅ ${message.author} تم إعطاؤك رول Problem Solving`
+    });
+
+    setTimeout(() => {
+      reply.delete().catch(() => { });
+    }, 10000);
+
+  }
+
+});
+
 // ===================== INTERACTIONS =====================
 
 client.on(Events.InteractionCreate, async (interaction) => {
