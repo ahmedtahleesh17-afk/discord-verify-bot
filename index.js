@@ -40,7 +40,6 @@ const db = mysql.createPool({
   connectionLimit: 5
 });
 
-// اختبار الاتصال
 (async () => {
   try {
     await db.query("SELECT 1");
@@ -54,9 +53,9 @@ const db = mysql.createPool({
 const verificationCodes = new Map();
 
 // ===================== SERVER SETTINGS =====================
-const SERVER_ID = '1469423215196770468';//تعديل
-const VERIFY_CHANNEL_ID = '1480579307783852165';//تعديل
-const SELECT_CHANNEL_ID = '1481824622394609754';//تعديل
+const SERVER_ID         = '1482853823692149078';
+const VERIFY_CHANNEL_ID = '1482853826066124905';
+const SELECT_CHANNEL_ID = '1482853826066124906';
 
 // ===================== AUTO ROLE =====================
 client.on('guildMemberAdd', async (member) => {
@@ -64,9 +63,9 @@ client.on('guildMemberAdd', async (member) => {
 
     const guild = member.guild;
 
-    const bannedRole = guild.roles.cache.find(r => r.name === '‼️┃Banned');
+    const bannedRole     = guild.roles.cache.find(r => r.name === '‼️┃Banned');
     const activationRole = guild.roles.cache.find(r => r.name === '❌┃Active');
-    const memberRole = guild.roles.cache.find(r => r.name === '🙋┃ Member');
+    const memberRole     = guild.roles.cache.find(r => r.name === '🙋┃ Member');
 
     const [rows] = await db.query(
       'SELECT banned FROM verified_users WHERE discord_id = ?',
@@ -115,49 +114,34 @@ client.once(Events.ClientReady, async () => {
     });
 
     await selectChannel.send({
-  content: '🛠️ أدوات الإدارة والتحكم بالمستخدمين',
-  components: [
+      content: '🛠️ أدوات الإدارة والتحكم بالمستخدمين',
+      components: [
 
-    new ActionRowBuilder().addComponents(
+        // ✅ الصف الأول - بدون close/open server
+        new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setCustomId('get_email')
+            .setLabel('📧 Get Student Email')
+            .setStyle(ButtonStyle.Primary),
 
-      new ButtonBuilder()
-        .setCustomId('get_email')
-        .setLabel('📧 Get Student Email')
-        .setStyle(ButtonStyle.Primary),
+          new ButtonBuilder()
+            .setCustomId('ban_user')
+            .setLabel('🚫 Ban User')
+            .setStyle(ButtonStyle.Danger),
 
-      new ButtonBuilder()
-        .setCustomId('ban_user')
-        .setLabel('🚫 Ban User')
-        .setStyle(ButtonStyle.Danger),
+          new ButtonBuilder()
+            .setCustomId('unban_user')
+            .setLabel('✅ Unban User')
+            .setStyle(ButtonStyle.Success),
 
-      new ButtonBuilder()
-        .setCustomId('unban_user')
-        .setLabel('✅ Unban User')
-        .setStyle(ButtonStyle.Success),
+          new ButtonBuilder()
+            .setCustomId('activate_user')
+            .setLabel('⚡ Activate User')
+            .setStyle(ButtonStyle.Primary)
+        )
 
-      new ButtonBuilder()
-        .setCustomId('switch_roles')
-        .setLabel('🔄 Switch Roles')
-        .setStyle(ButtonStyle.Secondary),
-
-      new ButtonBuilder()
-        .setCustomId('close_server')
-        .setLabel('🔧 Close Server')
-        .setStyle(ButtonStyle.Danger)
-
-    ),
-
-    new ActionRowBuilder().addComponents(
-
-      new ButtonBuilder()
-        .setCustomId('open_server')
-        .setLabel('🟢 Open Server')
-        .setStyle(ButtonStyle.Success)
-
-    )
-
-  ]
-});
+      ]
+    });
 
   } catch (err) {
     console.error('Panel error:', err);
@@ -165,124 +149,111 @@ client.once(Events.ClientReady, async () => {
 
 });
 
-// ===================== JAVA ROLE COMMAND =====================
+// ===================== JAVA & PS ROLE COMMANDS =====================
 client.on('messageCreate', async (message) => {
 
   if (message.author.bot) return;
 
-  const allowedChannel = "1479822682412552313";
-  const roleID = "1480535231479025776";
+  const allowedChannel = '1479822682412552313';
+  const javaRoleID     = '1480535231479025776';
+  const psRoleID       = '1486367831368138853';
 
   if (message.channel.id !== allowedChannel) return;
 
+  // ===== JAVA =====
   if (message.content === '!java.IT&AI-2026') {
 
-    if (message.member.roles.cache.has(roleID)) {
-
-      await message.delete().catch(() => { });
-
+    if (message.member.roles.cache.has(javaRoleID)) {
+      await message.delete().catch(() => {});
       const reply = await message.channel.send({
         content: `✅ ${message.author} أنت تملك الرول بالفعل.`
       });
-
-      // حذف الرسالة بعد 10 ثواني
-      setTimeout(() => reply.delete().catch(() => { }), 10000);
-
+      setTimeout(() => reply.delete().catch(() => {}), 10000);
       return;
     }
 
-    await message.member.roles.add(roleID);
-
-    // حذف رسالة الكود
-    await message.delete().catch(() => { });
+    await message.member.roles.add(javaRoleID);
+    await message.delete().catch(() => {});
 
     const reply = await message.channel.send({
       content: `✅ ${message.author} تم إعطاؤك رول طالب الجافا`
     });
-
-    // حذف رسالة التأكيد بعد 10 ثواني
-    setTimeout(() => {
-      reply.delete().catch(() => { });
-    }, 10000);
-
+    setTimeout(() => reply.delete().catch(() => {}), 10000);
   }
 
-});
+  // ===== PROBLEM SOLVING =====
+  if (message.content === '!ps.IT&AI-2026') {
 
-// ===================== PS ROLE COMMAND =====================
-
-client.on('messageCreate', async (message) => {
-
-  if (message.author.bot) return;
-
-  const allowedChannel = "1479822682412552313"; // نفس الروم
-  const roleID = "1486367831368138853"; // رول Problem Solving
-
-  if (message.channel.id !== allowedChannel) return;
-
-  if (message.content === '!ps.IT&AI-2026') { // غيرت الكود عشان يختلف
-
-    if (message.member.roles.cache.has(roleID)) {
-
-      await message.delete().catch(() => { });
-
+    if (message.member.roles.cache.has(psRoleID)) {
+      await message.delete().catch(() => {});
       const reply = await message.channel.send({
         content: `✅ ${message.author} أنت تملك الرول بالفعل.`
       });
-
-      setTimeout(() => reply.delete().catch(() => { }), 10000);
+      setTimeout(() => reply.delete().catch(() => {}), 10000);
       return;
     }
 
-    await message.member.roles.add(roleID);
-
-    await message.delete().catch(() => { });
+    await message.member.roles.add(psRoleID);
+    await message.delete().catch(() => {});
 
     const reply = await message.channel.send({
       content: `✅ ${message.author} تم إعطاؤك رول Problem Solving`
     });
-
-    setTimeout(() => {
-      reply.delete().catch(() => { });
-    }, 10000);
-
+    setTimeout(() => reply.delete().catch(() => {}), 10000);
   }
 
 });
 
 // ===================== INTERACTIONS =====================
-
 client.on(Events.InteractionCreate, async (interaction) => {
 
   try {
 
-    // ================= VERIFY BUTTON =================
+    // ================= VERIFY START =================
     if (interaction.isButton() && interaction.customId === 'verify_start') {
 
-      if (!interaction.deferred && !interaction.replied) {
-        await interaction.deferReply({ flags: 64 });
+      const modal = new ModalBuilder()
+        .setCustomId('username_modal')
+        .setTitle('🎓 Verify Account');
+
+      modal.addComponents(
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId('username_input')
+            .setLabel('Enter your university username')
+            .setPlaceholder('example: s.r.hjase')
+            .setStyle(TextInputStyle.Short)
+            .setRequired(true)
+        )
+      );
+
+      return interaction.showModal(modal);
+    }
+
+    // ================= ENTER CODE BUTTON =================
+    if (interaction.isButton() && interaction.customId === 'enter_code') {
+
+      const userData = verificationCodes.get(interaction.user.id);
+
+      if (!userData) {
+        return interaction.reply({ content: '❌ لازم تطلب كود أول', flags: 64 });
       }
 
-      try {
+      const codeModal = new ModalBuilder()
+        .setCustomId('code_modal')
+        .setTitle('📧 Enter Code');
 
-        await interaction.user.send(
-          `📹 **شاهد الفيديو التعريفي لطريقة تفعيل حسابك في السيرفر:**
-https://www.youtube.com/shorts/MsUS0BXnjjE`
-        );
+      codeModal.addComponents(
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId('code_input')
+            .setLabel('Enter the code')
+            .setStyle(TextInputStyle.Short)
+            .setRequired(true)
+        )
+      );
 
-        await interaction.user.send(
-          `🎓 **أرسل إيميلك الجامعي:**
-\`name@students.ptuk.edu.ps\``
-        );
-
-        verificationCodes.set(interaction.user.id, { step: 'email' });
-
-        return interaction.editReply('📩 تم إرسال رسالة في الخاص');
-
-      } catch {
-        return interaction.editReply('❌ افتح الخاص مع البوت أولاً');
-      }
-
+      return interaction.showModal(codeModal);
     }
 
     // ================= GET EMAIL BUTTON =================
@@ -299,23 +270,28 @@ https://www.youtube.com/shorts/MsUS0BXnjjE`
           new TextInputBuilder()
             .setCustomId('discord_id_input')
             .setLabel('Discord User ID')
+            .setPlaceholder('example: 123456789012345678')
             .setStyle(TextInputStyle.Short)
             .setRequired(true)
         )
       );
 
-      return interaction.showModal(modal).catch(() => { });
-
+      return interaction.showModal(modal).catch(() => {});
     }
 
-    // ================= EMAIL LOOKUP =================
+    // ================= EMAIL LOOKUP MODAL =================
     if (interaction.isModalSubmit() && interaction.customId === 'email_lookup_modal') {
 
       if (!interaction.deferred && !interaction.replied) {
         await interaction.deferReply({ flags: 64 });
       }
 
-      const userId = interaction.fields.getTextInputValue('discord_id_input');
+      const userId = interaction.fields.getTextInputValue('discord_id_input').trim();
+
+      // ✅ تحقق أن المدخل هو ID رقمي فقط
+      if (!/^\d+$/.test(userId)) {
+        return interaction.editReply('❌ الرجاء إدخال Discord ID رقمي صحيح');
+      }
 
       const [rows] = await db.query(
         'SELECT email FROM verified_users WHERE discord_id = ?',
@@ -323,11 +299,103 @@ https://www.youtube.com/shorts/MsUS0BXnjjE`
       );
 
       if (!rows.length) {
-        return interaction.editReply('❌ لا يوجد إيميل مرتبط');
+        return interaction.editReply('❌ لا يوجد إيميل مرتبط بهذا الـ ID');
       }
 
       return interaction.editReply(`📧 الإيميل الجامعي:\n**${rows[0].email}**`);
+    }
 
+    // ================= USERNAME MODAL =================
+    if (interaction.isModalSubmit() && interaction.customId === 'username_modal') {
+
+      const username = interaction.fields.getTextInputValue('username_input').trim();
+
+      if (!/^[a-zA-Z0-9.]+$/.test(username)) {
+        return interaction.reply({ content: '❌ Username غير صالح', flags: 64 });
+      }
+
+      const email = `${username}@students.ptuk.edu.ps`;
+
+      const [exists] = await db.query(
+        'SELECT discord_id FROM verified_users WHERE email = ?',
+        [email]
+      );
+
+      if (exists.length) {
+        return interaction.reply({ content: '❌ هذا الإيميل مستخدم بالفعل', flags: 64 });
+      }
+
+      const code = Math.floor(100000 + Math.random() * 900000);
+
+      verificationCodes.set(interaction.user.id, { code, email });
+
+      try {
+        await sgMail.send({
+          to: email,
+          from: process.env.EMAIL_USER,
+          subject: 'PTUK Verification Code',
+          html: `<h2>رمز التحقق</h2><h1>${code}</h1>`
+        });
+      } catch {
+        verificationCodes.delete(interaction.user.id);
+        return interaction.reply({ content: '❌ فشل إرسال الإيميل', flags: 64 });
+      }
+
+      return await interaction.reply({
+        content: '📧 تم إرسال كود التحقق إلى بريدك',
+        components: [
+          new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+              .setCustomId('enter_code')
+              .setLabel('✍️ Enter Code')
+              .setStyle(ButtonStyle.Primary)
+          )
+        ],
+        flags: 64
+      });
+    }
+
+    // ================= CODE MODAL =================
+    if (interaction.isModalSubmit() && interaction.customId === 'code_modal') {
+
+      await interaction.deferReply({ flags: 64 });
+
+      const userData = verificationCodes.get(interaction.user.id);
+
+      if (!userData) {
+        return interaction.editReply('❌ انتهت الجلسة، حاول مرة أخرى');
+      }
+
+      const enteredCode = interaction.fields.getTextInputValue('code_input');
+
+      if (enteredCode !== userData.code.toString()) {
+        return interaction.editReply('❌ الكود خاطئ');
+      }
+
+      const guild  = await client.guilds.fetch(SERVER_ID);
+      const member = await guild.members.fetch(interaction.user.id);
+
+      await db.query(
+        `INSERT INTO verified_users (discord_id, email, banned)
+         VALUES (?, ?, 0)
+         ON DUPLICATE KEY UPDATE email = VALUES(email)`,
+        [interaction.user.id, userData.email]
+      );
+
+      const activationRole = guild.roles.cache.find(r => r.name === '❌┃Active');
+      const memberRole     = guild.roles.cache.find(r => r.name === '🙋┃ Member');
+
+      if (activationRole && member.roles.cache.has(activationRole.id)) {
+        await member.roles.remove(activationRole);
+      }
+
+      if (memberRole && !member.roles.cache.has(memberRole.id)) {
+        await member.roles.add(memberRole);
+      }
+
+      verificationCodes.delete(interaction.user.id);
+
+      return interaction.editReply('🎉 تم التفعيل بنجاح!');
     }
 
     // ================= BAN / UNBAN BUTTON =================
@@ -349,11 +417,10 @@ https://www.youtube.com/shorts/MsUS0BXnjjE`
         )
       );
 
-      return interaction.showModal(modal).catch(() => { });
-
+      return interaction.showModal(modal).catch(() => {});
     }
 
-    // ================= BAN =================
+    // ================= BAN MODAL =================
     if (interaction.isModalSubmit() && interaction.customId === 'ban_modal') {
 
       if (!interaction.deferred && !interaction.replied) {
@@ -361,10 +428,9 @@ https://www.youtube.com/shorts/MsUS0BXnjjE`
       }
 
       return handleBan(interaction, interaction.fields.getTextInputValue('input'));
-
     }
 
-    // ================= UNBAN =================
+    // ================= UNBAN MODAL =================
     if (interaction.isModalSubmit() && interaction.customId === 'unban_modal') {
 
       if (!interaction.deferred && !interaction.replied) {
@@ -372,255 +438,93 @@ https://www.youtube.com/shorts/MsUS0BXnjjE`
       }
 
       return handleUnban(interaction, interaction.fields.getTextInputValue('input'));
-
-    }
-    // ================= CLOSE SERVER =================
-    if (interaction.isButton() && interaction.customId === 'close_server') {
-
-      await interaction.deferReply({ flags: 64 });
-
-      const guild = interaction.guild;
-
-      const closedRole = guild.roles.cache.find(r => r.name === "closed");
-
-      if (!closedRole)
-        return interaction.editReply("❌ Role 'closed' not found");
-
-      let count = 0;
-
-      for (const member of guild.members.cache.values()) {
-
-        if (!member.roles.cache.has(closedRole.id)) {
-
-          try {
-
-            await member.roles.add(closedRole);
-            count++;
-
-            await new Promise(r => setTimeout(r, 300));
-
-          } catch { }
-
-        }
-
-      }
-
-      interaction.editReply(`🔧 Server closed\n${count} members updated`);
-
-    }
-    // ================= OPEN SERVER =================
-    if (interaction.isButton() && interaction.customId === 'open_server') {
-
-      await interaction.deferReply({ flags: 64 });
-
-      const guild = interaction.guild;
-
-      const closedRole = guild.roles.cache.find(r => r.name === "closed");
-
-      if (!closedRole)
-        return interaction.editReply("❌ Role 'closed' not found");
-
-      let count = 0;
-
-      for (const member of guild.members.cache.values()) {
-
-        if (member.roles.cache.has(closedRole.id)) {
-
-          try {
-
-            await member.roles.remove(closedRole);
-            count++;
-
-            await new Promise(r => setTimeout(r, 300));
-
-          } catch { }
-
-        }
-
-      }
-
-      interaction.editReply(`🟢 Server opened\n${count} members updated`);
-
-    }
-    // ================= SWITCH ROLES =================
-    if (interaction.isButton() && interaction.customId === 'switch_roles') {
-
-      if (!interaction.deferred && !interaction.replied) {
-        await interaction.deferReply({ flags: 64 });
-      }
-
-      const guild = await client.guilds.fetch(SERVER_ID);
-      await guild.members.fetch();
-
-      const roleMap = {
-
-        "Leader": "👸┃Real Leader",
-        "Co-Leader": "🫅┃Real Co-Leader",
-        "Scientific Committee": "♾️┃Scientific Committee",
-        "Media Committee": "🎬┃Media Committee",
-        "Activities Committee": "🤹┃Activities Committee",
-        "Support": "🎗️┃Support Committee",
-        "banned": "‼️┃Banned",
-        "Coach": "🧑‍🏫┃Teacher",
-        "Activation required": "❌┃Active",
-        "Graduate": "🎖️┃Graduate",
-        "Fourth Year": "🏅┃4th",
-        "Third Year": "🥉┃3rd",
-        "Second Year": "🥈┃2nd",
-        "First Year": "🥇┃1st",
-        "Artificial intelligence": "🤖┃Artificial Intelligence",
-        "Computer science": "💻┃Computer Scince",
-        "Information security": "🛡️┃Information Security",
-        "Other": "❇️┃Other",
-        "Male": "♂️┃Male",
-        "Female": "♀️┃Female",
-        "member": "🙋┃ Member",
-        "BOTS": "🎰┃Bots",
-        "Admin": "🧑‍🔧┃Moderator",
-        "Committee": "👥┃Real Committee",
-      };
-
-      let switched = 0;
-
-      for (const member of guild.members.cache.values()) {
-
-        for (const oldRoleName in roleMap) {
-
-          const newRoleName = roleMap[oldRoleName];
-
-          const oldRole = guild.roles.cache.find(r => r.name === oldRoleName);
-          const newRole = guild.roles.cache.find(r => r.name === newRoleName);
-
-          if (!oldRole || !newRole) continue;
-
-          if (member.roles.cache.has(oldRole.id)) {
-
-            try {
-
-              await member.roles.remove(oldRole);
-              await member.roles.add(newRole);
-
-              switched++;
-
-            } catch { }
-
-          }
-
-        }
-
-      }
-
-      return interaction.editReply(`✅ تم استبدال ${switched} رول`);
-
     }
 
-  }
+    // ================= ACTIVATE USER BUTTON =================
+    if (interaction.isButton() && interaction.customId === 'activate_user') {
 
+      if (interaction.deferred || interaction.replied) return;
 
-  catch (err) {
-    console.error('Interaction error:', err);
-  }
+      const modal = new ModalBuilder()
+        .setCustomId('activate_modal')
+        .setTitle('⚡ Activate User');
 
-});
-
-// ===================== PRIVATE VERIFY =====================
-
-client.on('messageCreate', async (message) => {
-
-  if (message.author.bot || message.guild) return;
-
-  const userData = verificationCodes.get(message.author.id);
-  if (!userData) return;
-
-  // ================= EMAIL STEP =================
-  if (userData.step === 'email') {
-
-    const email = message.content.trim();
-
-    if (!email.endsWith('@students.ptuk.edu.ps')) {
-      return message.reply('❌ استخدم الإيميل الجامعي فقط');
-    }
-
-    const [exists] = await db.query(
-      'SELECT discord_id FROM verified_users WHERE email = ?',
-      [email]
-    );
-
-    if (exists.length) {
-      return message.reply('❌ هذا الإيميل مستخدم بالفعل');
-    }
-
-    const code = Math.floor(100000 + Math.random() * 900000);
-
-    verificationCodes.set(message.author.id, {
-      step: 'code',
-      code,
-      email
-    });
-
-    try {
-
-      await sgMail.send({
-        to: email,
-        from: process.env.EMAIL_USER,
-        subject: 'PTUK Verification Code',
-        html: `<h2>رمز التحقق</h2><h1>${code}</h1>`
-      });
-
-      return message.reply(
-        `📨 تم إرسال كود التحقق إلى بريدك الجامعي
-
-**ملاحظة: يرجى التحقق من قسم البريد غير الهام (Junk/Spam) فقد تجد الرمز هناك.**`
+      modal.addComponents(
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId('activate_discord_id')
+            .setLabel('Discord ID')
+            .setStyle(TextInputStyle.Short)
+            .setRequired(true)
+        ),
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId('activate_email')
+            .setLabel('University Email (username only)')
+            .setPlaceholder('example: s.r.hjase')
+            .setStyle(TextInputStyle.Short)
+            .setRequired(true)
+        )
       );
 
-    } catch {
-
-      verificationCodes.delete(message.author.id);
-      return message.reply('❌ فشل إرسال الإيميل — أبلغ الإدارة.');
-
+      return interaction.showModal(modal).catch(() => {});
     }
 
-  }
+    // ================= ACTIVATE USER MODAL =================
+    if (interaction.isModalSubmit() && interaction.customId === 'activate_modal') {
 
-  // ================= CODE STEP =================
-  if (userData.step === 'code') {
+      await interaction.deferReply({ flags: 64 });
 
-    if (message.content.trim() !== userData.code.toString()) {
-      return message.reply('❌ الكود خاطئ');
+      const discordId = interaction.fields.getTextInputValue('activate_discord_id').trim();
+      const username  = interaction.fields.getTextInputValue('activate_email').trim();
+      const email     = username.includes('@') ? username : `${username}@students.ptuk.edu.ps`;
+
+      const [emailCheck] = await db.query(
+        'SELECT discord_id FROM verified_users WHERE email = ?',
+        [email]
+      );
+
+      if (emailCheck.length && emailCheck[0].discord_id !== discordId) {
+        return interaction.editReply('❌ هذا الإيميل مرتبط بحساب آخر');
+      }
+
+      const guild  = await client.guilds.fetch(SERVER_ID);
+      const member = await guild.members.fetch(discordId).catch(() => null);
+
+      if (!member) {
+        return interaction.editReply('❌ المستخدم غير موجود في السيرفر');
+      }
+
+      const activationRole = guild.roles.cache.find(r => r.name === '❌┃Active');
+      const memberRole     = guild.roles.cache.find(r => r.name === '🙋┃ Member');
+
+      try {
+
+        if (activationRole && member.roles.cache.has(activationRole.id)) {
+          await member.roles.remove(activationRole);
+        }
+
+        if (memberRole && !member.roles.cache.has(memberRole.id)) {
+          await member.roles.add(memberRole);
+        }
+
+        await db.query(
+          `INSERT INTO verified_users (discord_id, email, banned)
+           VALUES (?, ?, 0)
+           ON DUPLICATE KEY UPDATE email = VALUES(email)`,
+          [discordId, email]
+        );
+
+        return interaction.editReply(`✅ تم تفعيل ${member.user.tag} بنجاح`);
+
+      } catch (err) {
+        console.error('Activate error:', err);
+        return interaction.editReply('❌ فشل التفعيل');
+      }
     }
 
-    const guild = await client.guilds.fetch(SERVER_ID);
-    const member = await guild.members.fetch(message.author.id).catch(() => null);
-
-    if (!member) {
-      return message.reply('❌ يجب أن تكون داخل السيرفر');
-    }
-
-    await db.query(
-      `INSERT INTO verified_users (discord_id, email, banned)
-VALUES (?, ?, 0)
-ON DUPLICATE KEY UPDATE email = VALUES(email)`,
-      [message.author.id, userData.email]
-    );
-
-    const activationRole = guild.roles.cache.find(r => r.name === '❌┃Active');
-    const memberRole = guild.roles.cache.find(r => r.name === '🙋┃ Member');
-
-    if (activationRole && member.roles.cache.has(activationRole.id)) {
-      await member.roles.remove(activationRole);
-    }
-
-    if (memberRole && !member.roles.cache.has(memberRole.id)) {
-      await member.roles.add(memberRole);
-    }
-
-    verificationCodes.delete(message.author.id);
-
-    return message.reply(
-      `🎉 تم تفعيل حسابك بنجاح — مرحبًا بك!
-https://discord.gg/duFDsDzvAf`
-    );
-
+  } catch (err) {
+    console.error('Interaction error:', err);
   }
 
 });
@@ -629,7 +533,7 @@ https://discord.gg/duFDsDzvAf`
 async function handleBan(interaction, input) {
 
   const guild = await client.guilds.fetch(SERVER_ID);
-  let member = null;
+  let member  = null;
 
   if (/^\d+$/.test(input)) {
     member = await guild.members.fetch(input).catch(() => null);
@@ -644,13 +548,11 @@ async function handleBan(interaction, input) {
     member = await guild.members.fetch(rows[0].discord_id).catch(() => null);
   }
 
-  if (!member) {
-    return interaction.editReply('❌ المستخدم غير موجود');
-  }
+  if (!member) return interaction.editReply('❌ المستخدم غير موجود');
 
-  const bannedRole = guild.roles.cache.find(r => r.name === '‼️┃Banned');
+  const bannedRole     = guild.roles.cache.find(r => r.name === '‼️┃Banned');
   const activationRole = guild.roles.cache.find(r => r.name === '❌┃Active');
-  const memberRole = guild.roles.cache.find(r => r.name === '🙋┃ Member');
+  const memberRole     = guild.roles.cache.find(r => r.name === '🙋┃ Member');
 
   try {
 
@@ -684,7 +586,7 @@ async function handleBan(interaction, input) {
 async function handleUnban(interaction, input) {
 
   const guild = await client.guilds.fetch(SERVER_ID);
-  let member = null;
+  let member  = null;
 
   if (/^\d+$/.test(input)) {
     member = await guild.members.fetch(input).catch(() => null);
@@ -699,9 +601,7 @@ async function handleUnban(interaction, input) {
     member = await guild.members.fetch(rows[0].discord_id).catch(() => null);
   }
 
-  if (!member) {
-    return interaction.editReply('❌ المستخدم غير موجود');
-  }
+  if (!member) return interaction.editReply('❌ المستخدم غير موجود');
 
   const bannedRole = guild.roles.cache.find(r => r.name === '‼️┃Banned');
   const memberRole = guild.roles.cache.find(r => r.name === '🙋┃ Member');
