@@ -60,9 +60,9 @@ const db = mysql.createPool({
 const verificationCodes = new Map();
 
 // ===================== SERVER SETTINGS =====================
-const SERVER_ID         = '1469423215196770468';
-const VERIFY_CHANNEL_ID = '1480579307783852165';
-const SELECT_CHANNEL_ID = '1481824622394609754';
+const SERVER_ID         = '1482853823692149078';
+const VERIFY_CHANNEL_ID = '1482853826066124905';
+const SELECT_CHANNEL_ID = '1482853826066124906';
 
 // ===================== AUTO ROLE =====================
 client.on('guildMemberAdd', async (member) => {
@@ -102,6 +102,10 @@ client.on('guildMemberAdd', async (member) => {
 client.once(Events.ClientReady, async () => {
 
   console.log(`✅ Bot online as ${client.user.tag}`);
+
+  // ✅ تحقق من متغيرات البيئة
+  console.log('📧 EMAIL_USER:', process.env.EMAIL_USER || '❌ غير موجود');
+  console.log('🔑 SENDGRID_API_KEY:', process.env.SENDGRID_API_KEY ? '✅ موجود' : '❌ غير موجود');
 
   try {
 
@@ -208,7 +212,7 @@ client.on('messageCreate', async (message) => {
 
 });
 
-// ===================== PREVENT CRASH ON UNHANDLED ERRORS =====================
+// ===================== PREVENT CRASH =====================
 process.on('unhandledRejection', (err) => {
   console.error('Unhandled rejection:', err?.message || err);
 });
@@ -220,6 +224,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     // ================= VERIFY START =================
     if (interaction.isButton() && interaction.customId === 'verify_start') {
+
+      console.log('🔘 Verify button clicked by:', interaction.user.tag);
 
       const modal = new ModalBuilder()
         .setCustomId('username_modal')
@@ -236,7 +242,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
         )
       );
 
-      // ✅ catch يمنع الكراش لو انتهت صلاحية الـ interaction
       return interaction.showModal(modal).catch(() => {});
     }
 
@@ -317,15 +322,19 @@ client.on(Events.InteractionCreate, async (interaction) => {
     // ================= USERNAME MODAL =================
     if (interaction.isModalSubmit() && interaction.customId === 'username_modal') {
 
+      console.log('📋 Username modal submitted by:', interaction.user.tag);
+
       await interaction.deferReply({ flags: 64 });
 
       const username = interaction.fields.getTextInputValue('username_input').trim();
+      console.log('📥 Username received:', username);
 
       if (!/^[a-zA-Z0-9.]+$/.test(username)) {
         return interaction.editReply('❌ Username غير صالح');
       }
 
       const email = `${username}@students.ptuk.edu.ps`;
+      console.log('📧 Email to send to:', email);
 
       const [exists] = await db.query(
         'SELECT discord_id FROM verified_users WHERE email = ?',
@@ -337,18 +346,26 @@ client.on(Events.InteractionCreate, async (interaction) => {
       }
 
       const code = Math.floor(100000 + Math.random() * 900000);
+      console.log('🔢 Code generated:', code);
 
       verificationCodes.set(interaction.user.id, { code, email });
 
       try {
+        console.log('📤 Attempting to send email...');
+        console.log('   From:', process.env.EMAIL_USER);
+        console.log('   To:', email);
+
         await transporter.sendMail({
           to: email,
           from: process.env.EMAIL_USER,
           subject: 'PTUK Verification Code',
           html: `<h2>رمز التحقق</h2><h1>${code}</h1>`
         });
+
+        console.log('✅ Email sent successfully!');
+
       } catch (err) {
-        console.error('Gmail Error:', err.message);
+        console.error('❌ Gmail Error FULL:', err);
         verificationCodes.delete(interaction.user.id);
         return interaction.editReply('❌ فشل إرسال الإيميل');
       }
