@@ -60,9 +60,9 @@ const db = mysql.createPool({
 const verificationCodes = new Map();
 
 // ===================== SERVER SETTINGS =====================
-const SERVER_ID         = '1469423215196770468';
-const VERIFY_CHANNEL_ID = '1480579307783852165';
-const SELECT_CHANNEL_ID = '1481824622394609754';
+const SERVER_ID         = '1482853823692149078';
+const VERIFY_CHANNEL_ID = '1482853826066124905';
+const SELECT_CHANNEL_ID = '1482853826066124906';
 
 // ===================== AUTO ROLE =====================
 client.on('guildMemberAdd', async (member) => {
@@ -208,6 +208,11 @@ client.on('messageCreate', async (message) => {
 
 });
 
+// ===================== PREVENT CRASH ON UNHANDLED ERRORS =====================
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled rejection:', err?.message || err);
+});
+
 // ===================== INTERACTIONS =====================
 client.on(Events.InteractionCreate, async (interaction) => {
 
@@ -231,7 +236,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
         )
       );
 
-      return interaction.showModal(modal);
+      // ✅ catch يمنع الكراش لو انتهت صلاحية الـ interaction
+      return interaction.showModal(modal).catch(() => {});
     }
 
     // ================= ENTER CODE BUTTON =================
@@ -257,7 +263,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         )
       );
 
-      return interaction.showModal(codeModal);
+      return interaction.showModal(codeModal).catch(() => {});
     }
 
     // ================= GET EMAIL BUTTON =================
@@ -311,7 +317,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
     // ================= USERNAME MODAL =================
     if (interaction.isModalSubmit() && interaction.customId === 'username_modal') {
 
-      // ✅ رد فوري على Discord قبل أي عملية
       await interaction.deferReply({ flags: 64 });
 
       const username = interaction.fields.getTextInputValue('username_input').trim();
