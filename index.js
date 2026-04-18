@@ -60,9 +60,9 @@ const db = mysql.createPool({
 const verificationCodes = new Map();
 
 // ===================== SERVER SETTINGS =====================
-const SERVER_ID         = '1482853823692149078';
-const VERIFY_CHANNEL_ID = '1482853826066124905';
-const SELECT_CHANNEL_ID = '1482853826066124906';
+const SERVER_ID         = '1469423215196770468';
+const VERIFY_CHANNEL_ID = '1480579307783852165';
+const SELECT_CHANNEL_ID = '1481824622394609754';
 
 // ===================== AUTO ROLE =====================
 client.on('guildMemberAdd', async (member) => {
