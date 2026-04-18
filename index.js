@@ -9,25 +9,17 @@ const {
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
+  StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder,
   Events
 } = require('discord.js');
 
-const nodemailer = require('nodemailer');
-
-// ✅ Brevo SMTP
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT),
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.SENDGRID_API_KEY
-  }
-});
+const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const mysql = require('mysql2/promise');
 
-// ===================== CLIENT =====================
+// ===================== CLIENT ====================
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -61,6 +53,16 @@ const db = mysql.createPool({
 
 // ===================== TEMP STORAGE =====================
 const verificationCodes = new Map();
+
+// ===================== UNIVERSITY DOMAINS =====================
+const UNIVERSITY_DOMAINS = {
+  'ptuk':    'students.ptuk.edu.ps',
+  'najah':   'stu.najah.edu',
+  'birzeit': 'students.birzeit.edu',
+  'hebron':  'students.hebron.edu',
+  'alquds':  'students.alquds.edu',
+  'aaup':    'student.aaup.edu'
+};
 
 // ===================== SERVER SETTINGS =====================
 const SERVER_ID         = '1469423215196770468';
@@ -105,10 +107,6 @@ client.on('guildMemberAdd', async (member) => {
 client.once(Events.ClientReady, async () => {
 
   console.log(`✅ Bot online as ${client.user.tag}`);
-  console.log('📧 EMAIL_USER:', process.env.EMAIL_USER || '❌ غير موجود');
-  console.log('🔑 SENDGRID_API_KEY:', process.env.SENDGRID_API_KEY ? '✅ موجود' : '❌ غير موجود');
-  console.log('🌐 SMTP_HOST:', process.env.SMTP_HOST || '❌ غير موجود');
-  console.log('🔌 SMTP_PORT:', process.env.SMTP_PORT || '❌ غير موجود');
 
   try {
 
@@ -130,6 +128,8 @@ client.once(Events.ClientReady, async () => {
     await selectChannel.send({
       content: '🛠️ أدوات الإدارة والتحكم بالمستخدمين',
       components: [
+
+        // الصف الأول
         new ActionRowBuilder().addComponents(
           new ButtonBuilder()
             .setCustomId('get_email')
@@ -150,7 +150,16 @@ client.once(Events.ClientReady, async () => {
             .setCustomId('activate_user')
             .setLabel('⚡ Activate User')
             .setStyle(ButtonStyle.Primary)
+        ),
+
+        // الصف الثاني - تفعيل متعدد الجامعات
+        new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setCustomId('activate_multi_uni')
+            .setLabel('🎓 Activate Multi-Uni')
+            .setStyle(ButtonStyle.Secondary)
         )
+
       ]
     });
 
@@ -215,11 +224,6 @@ client.on('messageCreate', async (message) => {
 
 });
 
-// ===================== PREVENT CRASH =====================
-process.on('unhandledRejection', (err) => {
-  console.error('Unhandled rejection:', err?.message || err);
-});
-
 // ===================== INTERACTIONS =====================
 client.on(Events.InteractionCreate, async (interaction) => {
 
@@ -227,8 +231,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     // ================= VERIFY START =================
     if (interaction.isButton() && interaction.customId === 'verify_start') {
-
-      console.log('🔘 Verify button clicked by:', interaction.user.tag);
 
       const modal = new ModalBuilder()
         .setCustomId('username_modal')
@@ -245,7 +247,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         )
       );
 
-      return interaction.showModal(modal).catch(() => {});
+      return interaction.showModal(modal);
     }
 
     // ================= ENTER CODE BUTTON =================
@@ -271,7 +273,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         )
       );
 
-      return interaction.showModal(codeModal).catch(() => {});
+      return interaction.showModal(codeModal);
     }
 
     // ================= GET EMAIL BUTTON =================
@@ -325,19 +327,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
     // ================= USERNAME MODAL =================
     if (interaction.isModalSubmit() && interaction.customId === 'username_modal') {
 
-      console.log('📋 Username modal submitted by:', interaction.user.tag);
-
-      await interaction.deferReply({ flags: 64 });
-
       const username = interaction.fields.getTextInputValue('username_input').trim();
-      console.log('📥 Username received:', username);
 
       if (!/^[a-zA-Z0-9.]+$/.test(username)) {
-        return interaction.editReply('❌ Username غير صالح');
+        return interaction.reply({ content: '❌ Username غير صالح', flags: 64 });
       }
 
       const email = `${username}@students.ptuk.edu.ps`;
-      console.log('📧 Email to send to:', email);
 
       const [exists] = await db.query(
         'SELECT discord_id FROM verified_users WHERE email = ?',
@@ -345,35 +341,26 @@ client.on(Events.InteractionCreate, async (interaction) => {
       );
 
       if (exists.length) {
-        return interaction.editReply('❌ هذا الإيميل مستخدم بالفعل');
+        return interaction.reply({ content: '❌ هذا الإيميل مستخدم بالفعل', flags: 64 });
       }
 
       const code = Math.floor(100000 + Math.random() * 900000);
-      console.log('🔢 Code generated:', code);
 
       verificationCodes.set(interaction.user.id, { code, email });
 
       try {
-        console.log('📤 Attempting to send email via Brevo...');
-        console.log('   From:', process.env.EMAIL_USER);
-        console.log('   To:', email);
-
-        await transporter.sendMail({
+        await sgMail.send({
           to: email,
           from: process.env.EMAIL_USER,
           subject: 'PTUK Verification Code',
           html: `<h2>رمز التحقق</h2><h1>${code}</h1>`
         });
-
-        console.log('✅ Email sent successfully!');
-
-      } catch (err) {
-        console.error('❌ Brevo Error FULL:', err);
+      } catch {
         verificationCodes.delete(interaction.user.id);
-        return interaction.editReply('❌ فشل إرسال الإيميل');
+        return interaction.reply({ content: '❌ فشل إرسال الإيميل', flags: 64 });
       }
 
-      return interaction.editReply({
+      return await interaction.reply({
         content: '📧 تم إرسال كود التحقق إلى بريدك',
         components: [
           new ActionRowBuilder().addComponents(
@@ -382,7 +369,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
               .setLabel('✍️ Enter Code')
               .setStyle(ButtonStyle.Primary)
           )
-        ]
+        ],
+        flags: 64
       });
     }
 
@@ -550,6 +538,156 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
       } catch (err) {
         console.error('Activate error:', err);
+        return interaction.editReply('❌ فشل التفعيل');
+      }
+    }
+
+    // ================= ACTIVATE MULTI-UNI BUTTON =================
+    if (interaction.isButton() && interaction.customId === 'activate_multi_uni') {
+
+      if (interaction.deferred || interaction.replied) return;
+
+      await interaction.reply({
+        content: '🎓 اختر الجامعة للطالب:',
+        components: [
+          new ActionRowBuilder().addComponents(
+            new StringSelectMenuBuilder()
+              .setCustomId('select_university')
+              .setPlaceholder('اختر الجامعة...')
+              .addOptions(
+                new StringSelectMenuOptionBuilder()
+                  .setLabel('Palestine Technical University – Kadoorie')
+                  .setValue('ptuk')
+                  .setEmoji('🎓'),
+                new StringSelectMenuOptionBuilder()
+                  .setLabel('An-Najah National University')
+                  .setValue('najah')
+                  .setEmoji('🎓'),
+                new StringSelectMenuOptionBuilder()
+                  .setLabel('Birzeit University')
+                  .setValue('birzeit')
+                  .setEmoji('🎓'),
+                new StringSelectMenuOptionBuilder()
+                  .setLabel('Hebron University')
+                  .setValue('hebron')
+                  .setEmoji('🎓'),
+                new StringSelectMenuOptionBuilder()
+                  .setLabel('Al-Quds University')
+                  .setValue('alquds')
+                  .setEmoji('🎓'),
+                new StringSelectMenuOptionBuilder()
+                  .setLabel('Arab American University')
+                  .setValue('aaup')
+                  .setEmoji('🎓')
+              )
+          )
+        ],
+        flags: 64
+      });
+    }
+
+    // ================= SELECT UNIVERSITY =================
+    if (interaction.isStringSelectMenu() && interaction.customId === 'select_university') {
+
+      const selectedUni = interaction.values[0];
+
+      verificationCodes.set(`uni_${interaction.user.id}`, { university: selectedUni });
+
+      const modal = new ModalBuilder()
+        .setCustomId('multi_uni_activate_modal')
+        .setTitle('🎓 Activate Student');
+
+      modal.addComponents(
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId('multi_discord_id')
+            .setLabel('Discord ID')
+            .setPlaceholder('مثال: 123456789012345678')
+            .setStyle(TextInputStyle.Short)
+            .setRequired(true)
+        ),
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId('multi_username')
+            .setLabel('Username (بدون الدومين)')
+            .setPlaceholder('مثال: s.r.hjase')
+            .setStyle(TextInputStyle.Short)
+            .setRequired(true)
+        )
+      );
+
+      return interaction.showModal(modal);
+    }
+
+    // ================= MULTI-UNI ACTIVATE MODAL =================
+    if (interaction.isModalSubmit() && interaction.customId === 'multi_uni_activate_modal') {
+
+      await interaction.deferReply({ flags: 64 });
+
+      const uniData = verificationCodes.get(`uni_${interaction.user.id}`);
+
+      if (!uniData) {
+        return interaction.editReply('❌ انتهت الجلسة، اضغط الزر مجدداً');
+      }
+
+      const discordId = interaction.fields.getTextInputValue('multi_discord_id').trim();
+      const username  = interaction.fields.getTextInputValue('multi_username').trim();
+
+      if (!/^\d+$/.test(discordId)) {
+        return interaction.editReply('❌ Discord ID يجب أن يكون أرقاماً فقط');
+      }
+
+      if (!/^[a-zA-Z0-9.]+$/.test(username)) {
+        return interaction.editReply('❌ Username غير صالح');
+      }
+
+      const domain = UNIVERSITY_DOMAINS[uniData.university];
+      const email  = `${username}@${domain}`;
+
+      const [emailCheck] = await db.query(
+        'SELECT discord_id FROM verified_users WHERE email = ?',
+        [email]
+      );
+
+      if (emailCheck.length && emailCheck[0].discord_id !== discordId) {
+        return interaction.editReply('❌ هذا الإيميل مرتبط بحساب آخر');
+      }
+
+      const guild  = await client.guilds.fetch(SERVER_ID);
+      const member = await guild.members.fetch(discordId).catch(() => null);
+
+      if (!member) {
+        return interaction.editReply('❌ المستخدم غير موجود في السيرفر');
+      }
+
+      const activationRole = guild.roles.cache.find(r => r.name === '❌┃Active');
+      const memberRole     = guild.roles.cache.find(r => r.name === '🙋┃ Member');
+
+      try {
+
+        if (activationRole && member.roles.cache.has(activationRole.id)) {
+          await member.roles.remove(activationRole);
+        }
+
+        if (memberRole && !member.roles.cache.has(memberRole.id)) {
+          await member.roles.add(memberRole);
+        }
+
+        await db.query(
+          `INSERT INTO verified_users (discord_id, email, banned)
+           VALUES (?, ?, 0)
+           ON DUPLICATE KEY UPDATE email = VALUES(email)`,
+          [discordId, email]
+        );
+
+        verificationCodes.delete(`uni_${interaction.user.id}`);
+
+        return interaction.editReply(
+          `✅ تم تفعيل **${member.user.tag}** بنجاح\n📧 الإيميل: \`${email}\``
+        );
+
+      } catch (err) {
+        console.error('Multi-uni activate error:', err);
         return interaction.editReply('❌ فشل التفعيل');
       }
     }
