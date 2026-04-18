@@ -14,8 +14,11 @@ const {
 
 const nodemailer = require('nodemailer');
 
+// ✅ Brevo SMTP
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT),
+  secure: false,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.SENDGRID_API_KEY
@@ -102,10 +105,10 @@ client.on('guildMemberAdd', async (member) => {
 client.once(Events.ClientReady, async () => {
 
   console.log(`✅ Bot online as ${client.user.tag}`);
-
-  // ✅ تحقق من متغيرات البيئة
   console.log('📧 EMAIL_USER:', process.env.EMAIL_USER || '❌ غير موجود');
   console.log('🔑 SENDGRID_API_KEY:', process.env.SENDGRID_API_KEY ? '✅ موجود' : '❌ غير موجود');
+  console.log('🌐 SMTP_HOST:', process.env.SMTP_HOST || '❌ غير موجود');
+  console.log('🔌 SMTP_PORT:', process.env.SMTP_PORT || '❌ غير موجود');
 
   try {
 
@@ -351,7 +354,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       verificationCodes.set(interaction.user.id, { code, email });
 
       try {
-        console.log('📤 Attempting to send email...');
+        console.log('📤 Attempting to send email via Brevo...');
         console.log('   From:', process.env.EMAIL_USER);
         console.log('   To:', email);
 
@@ -365,7 +368,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         console.log('✅ Email sent successfully!');
 
       } catch (err) {
-        console.error('❌ Gmail Error FULL:', err);
+        console.error('❌ Brevo Error FULL:', err);
         verificationCodes.delete(interaction.user.id);
         return interaction.editReply('❌ فشل إرسال الإيميل');
       }
