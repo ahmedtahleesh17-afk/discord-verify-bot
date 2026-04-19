@@ -28,7 +28,7 @@ const transporter = nodemailer.createTransport({
 
 const mysql = require('mysql2/promise');
 
-// ===================== CLIENT ====================
+// ===================== CLIENT ===================
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
