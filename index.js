@@ -14,8 +14,8 @@ const {
   Events
 } = require('discord.js');
 
-const sgMail = require('@sendgrid/mail');
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+const { Resend } = require('resend');
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const mysql = require('mysql2/promise');
 
@@ -349,9 +349,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
       verificationCodes.set(interaction.user.id, { code, email });
 
       try {
-        await sgMail.send({
+        await resend.emails.send({
+          from: 'onboarding@resend.dev',
           to: email,
-          from: process.env.EMAIL_USER,
           subject: 'PTUK Verification Code',
           html: `<h2>رمز التحقق</h2><h1>${code}</h1>`
         });
