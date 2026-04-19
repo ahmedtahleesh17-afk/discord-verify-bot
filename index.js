@@ -14,8 +14,17 @@ const {
   Events
 } = require('discord.js');
 
-const { Resend } = require('resend');
-const resend = new Resend(process.env.RESEND_API_KEY);
+const nodemailer = require('nodemailer');
+
+const transporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
 
 const mysql = require('mysql2/promise');
 
@@ -349,15 +358,16 @@ client.on(Events.InteractionCreate, async (interaction) => {
       verificationCodes.set(interaction.user.id, { code, email });
 
       try {
-        await resend.emails.send({
-          from: 'onboarding@resend.dev',
+        await transporter.sendMail({
+          from: process.env.EMAIL_USER,
           to: email,
           subject: 'PTUK Verification Code',
           html: `<h2>رمز التحقق</h2><h1>${code}</h1>`
         });
-      } catch {
+      } catch (err) {
+        console.error('Email error:', err);
         verificationCodes.delete(interaction.user.id);
-        return interaction.reply({ content: '❌ فشل إرسال الإيميل', flags: 64 });
+        return interaction.reply({ content: `❌ فشل إرسال الإيميل: ${err.message}`, flags: 64 });
       }
 
       return await interaction.reply({
