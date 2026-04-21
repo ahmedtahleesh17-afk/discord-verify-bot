@@ -14,8 +14,18 @@ const {
   Events
 } = require('discord.js');
 
-const sgMail = require('@sendgrid/mail');
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+// ===================== NODEMAILER (بدل SendGrid) =====================
+const nodemailer = require('nodemailer');
+
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT || 587),
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.GMAIL_PASS
+  }
+});
 
 const mysql = require('mysql2/promise');
 
@@ -348,14 +358,16 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
       verificationCodes.set(interaction.user.id, { code, email });
 
+      // ===== إرسال الإيميل عبر Nodemailer =====
       try {
-        await sgMail.send({
-          to: email,
+        await transporter.sendMail({
           from: process.env.EMAIL_USER,
+          to: email,
           subject: 'PTUK Verification Code',
           html: `<h2>رمز التحقق</h2><h1>${code}</h1>`
         });
-      } catch {
+      } catch (mailErr) {
+        console.error('Mail error:', mailErr.message);
         verificationCodes.delete(interaction.user.id);
         return interaction.reply({ content: '❌ فشل إرسال الإيميل', flags: 64 });
       }
