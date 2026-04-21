@@ -1,4 +1,4 @@
-
+require('dotenv').config();
 
 const {
   Client,
@@ -14,21 +14,12 @@ const {
   Events
 } = require('discord.js');
 
-const nodemailer = require('nodemailer');
-
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.GMAIL_PASS
-  }
-});
+const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const mysql = require('mysql2/promise');
 
-// ===================== CLIENT ===================
+// ===================== CLIENT ====================
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -358,16 +349,15 @@ client.on(Events.InteractionCreate, async (interaction) => {
       verificationCodes.set(interaction.user.id, { code, email });
 
       try {
-        await transporter.sendMail({
-          from: process.env.EMAIL_USER,
+        await sgMail.send({
           to: email,
+          from: process.env.EMAIL_USER,
           subject: 'PTUK Verification Code',
           html: `<h2>رمز التحقق</h2><h1>${code}</h1>`
         });
-      } catch (err) {
-        console.error('Email error:', err);
+      } catch {
         verificationCodes.delete(interaction.user.id);
-        return interaction.reply({ content: `❌ فشل إرسال الإيميل: ${err.message}`, flags: 64 });
+        return interaction.reply({ content: '❌ فشل إرسال الإيميل', flags: 64 });
       }
 
       return await interaction.reply({
