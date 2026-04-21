@@ -14,18 +14,9 @@ const {
   Events
 } = require('discord.js');
 
-// ===================== NODEMAILER (بدل SendGrid) =====================
-const nodemailer = require('nodemailer');
-
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT || 587),
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.GMAIL_PASS
-  }
-});
+// ===================== RESEND =====================
+const { Resend } = require('resend');
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const mysql = require('mysql2/promise');
 
@@ -138,8 +129,6 @@ client.once(Events.ClientReady, async () => {
     await selectChannel.send({
       content: '🛠️ أدوات الإدارة والتحكم بالمستخدمين',
       components: [
-
-        // الصف الأول
         new ActionRowBuilder().addComponents(
           new ButtonBuilder()
             .setCustomId('get_email')
@@ -161,15 +150,12 @@ client.once(Events.ClientReady, async () => {
             .setLabel('⚡ Activate User')
             .setStyle(ButtonStyle.Primary)
         ),
-
-        // الصف الثاني - تفعيل متعدد الجامعات
         new ActionRowBuilder().addComponents(
           new ButtonBuilder()
             .setCustomId('activate_multi_uni')
             .setLabel('🎓 Activate Multi-Uni')
             .setStyle(ButtonStyle.Secondary)
         )
-
       ]
     });
 
@@ -190,45 +176,33 @@ client.on('messageCreate', async (message) => {
 
   if (message.channel.id !== allowedChannel) return;
 
-  // ===== JAVA =====
   if (message.content === '!java.IT&AI-2026') {
 
     if (message.member.roles.cache.has(javaRoleID)) {
       await message.delete().catch(() => {});
-      const reply = await message.channel.send({
-        content: `✅ ${message.author} أنت تملك الرول بالفعل.`
-      });
+      const reply = await message.channel.send({ content: `✅ ${message.author} أنت تملك الرول بالفعل.` });
       setTimeout(() => reply.delete().catch(() => {}), 10000);
       return;
     }
 
     await message.member.roles.add(javaRoleID);
     await message.delete().catch(() => {});
-
-    const reply = await message.channel.send({
-      content: `✅ ${message.author} تم إعطاؤك رول طالب الجافا`
-    });
+    const reply = await message.channel.send({ content: `✅ ${message.author} تم إعطاؤك رول طالب الجافا` });
     setTimeout(() => reply.delete().catch(() => {}), 10000);
   }
 
-  // ===== PROBLEM SOLVING =====
   if (message.content === '!ps.IT&AI-2026') {
 
     if (message.member.roles.cache.has(psRoleID)) {
       await message.delete().catch(() => {});
-      const reply = await message.channel.send({
-        content: `✅ ${message.author} أنت تملك الرول بالفعل.`
-      });
+      const reply = await message.channel.send({ content: `✅ ${message.author} أنت تملك الرول بالفعل.` });
       setTimeout(() => reply.delete().catch(() => {}), 10000);
       return;
     }
 
     await message.member.roles.add(psRoleID);
     await message.delete().catch(() => {});
-
-    const reply = await message.channel.send({
-      content: `✅ ${message.author} تم إعطاؤك رول Problem Solving`
-    });
+    const reply = await message.channel.send({ content: `✅ ${message.author} تم إعطاؤك رول Problem Solving` });
     setTimeout(() => reply.delete().catch(() => {}), 10000);
   }
 
@@ -312,9 +286,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     // ================= EMAIL LOOKUP MODAL =================
     if (interaction.isModalSubmit() && interaction.customId === 'email_lookup_modal') {
 
-      if (!interaction.deferred && !interaction.replied) {
-        await interaction.deferReply({ flags: 64 });
-      }
+      await interaction.deferReply({ flags: 64 });
 
       const userId = interaction.fields.getTextInputValue('discord_id_input').trim();
 
@@ -337,10 +309,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
     // ================= USERNAME MODAL =================
     if (interaction.isModalSubmit() && interaction.customId === 'username_modal') {
 
+      // ⚠️ defer فوراً قبل أي عملية async
+      await interaction.deferReply({ flags: 64 });
+
       const username = interaction.fields.getTextInputValue('username_input').trim();
 
       if (!/^[a-zA-Z0-9.]+$/.test(username)) {
-        return interaction.reply({ content: '❌ Username غير صالح', flags: 64 });
+        return interaction.editReply('❌ Username غير صالح');
       }
 
       const email = `${username}@students.ptuk.edu.ps`;
@@ -351,29 +326,35 @@ client.on(Events.InteractionCreate, async (interaction) => {
       );
 
       if (exists.length) {
-        return interaction.reply({ content: '❌ هذا الإيميل مستخدم بالفعل', flags: 64 });
+        return interaction.editReply('❌ هذا الإيميل مستخدم بالفعل');
       }
 
       const code = Math.floor(100000 + Math.random() * 900000);
-
       verificationCodes.set(interaction.user.id, { code, email });
 
-      // ===== إرسال الإيميل عبر Nodemailer =====
+      // ===== إرسال الإيميل عبر Resend =====
       try {
-        await transporter.sendMail({
+        const { error } = await resend.emails.send({
           from: process.env.EMAIL_USER,
           to: email,
           subject: 'PTUK Verification Code',
           html: `<h2>رمز التحقق</h2><h1>${code}</h1>`
         });
+
+        if (error) {
+          console.error('Resend error:', error);
+          verificationCodes.delete(interaction.user.id);
+          return interaction.editReply('❌ فشل إرسال الإيميل');
+        }
+
       } catch (mailErr) {
         console.error('Mail error:', mailErr.message);
         verificationCodes.delete(interaction.user.id);
-        return interaction.reply({ content: '❌ فشل إرسال الإيميل', flags: 64 });
+        return interaction.editReply('❌ فشل إرسال الإيميل');
       }
 
-      return await interaction.reply({
-        content: '📧 تم إرسال كود التحقق إلى بريدك',
+      return interaction.editReply({
+        content: '📧 تم إرسال كود التحقق إلى بريدك الجامعي',
         components: [
           new ActionRowBuilder().addComponents(
             new ButtonBuilder()
@@ -381,8 +362,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
               .setLabel('✍️ Enter Code')
               .setStyle(ButtonStyle.Primary)
           )
-        ],
-        flags: 64
+        ]
       });
     }
 
@@ -454,20 +434,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
     // ================= BAN MODAL =================
     if (interaction.isModalSubmit() && interaction.customId === 'ban_modal') {
 
-      if (!interaction.deferred && !interaction.replied) {
-        await interaction.deferReply({ flags: 64 });
-      }
-
+      await interaction.deferReply({ flags: 64 });
       return handleBan(interaction, interaction.fields.getTextInputValue('input'));
     }
 
     // ================= UNBAN MODAL =================
     if (interaction.isModalSubmit() && interaction.customId === 'unban_modal') {
 
-      if (!interaction.deferred && !interaction.replied) {
-        await interaction.deferReply({ flags: 64 });
-      }
-
+      await interaction.deferReply({ flags: 64 });
       return handleUnban(interaction, interaction.fields.getTextInputValue('input'));
     }
 
@@ -567,30 +541,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
               .setCustomId('select_university')
               .setPlaceholder('اختر الجامعة...')
               .addOptions(
-                new StringSelectMenuOptionBuilder()
-                  .setLabel('Palestine Technical University – Kadoorie')
-                  .setValue('ptuk')
-                  .setEmoji('🎓'),
-                new StringSelectMenuOptionBuilder()
-                  .setLabel('An-Najah National University')
-                  .setValue('najah')
-                  .setEmoji('🎓'),
-                new StringSelectMenuOptionBuilder()
-                  .setLabel('Birzeit University')
-                  .setValue('birzeit')
-                  .setEmoji('🎓'),
-                new StringSelectMenuOptionBuilder()
-                  .setLabel('Hebron University')
-                  .setValue('hebron')
-                  .setEmoji('🎓'),
-                new StringSelectMenuOptionBuilder()
-                  .setLabel('Al-Quds University')
-                  .setValue('alquds')
-                  .setEmoji('🎓'),
-                new StringSelectMenuOptionBuilder()
-                  .setLabel('Arab American University')
-                  .setValue('aaup')
-                  .setEmoji('🎓')
+                new StringSelectMenuOptionBuilder().setLabel('Palestine Technical University – Kadoorie').setValue('ptuk').setEmoji('🎓'),
+                new StringSelectMenuOptionBuilder().setLabel('An-Najah National University').setValue('najah').setEmoji('🎓'),
+                new StringSelectMenuOptionBuilder().setLabel('Birzeit University').setValue('birzeit').setEmoji('🎓'),
+                new StringSelectMenuOptionBuilder().setLabel('Hebron University').setValue('hebron').setEmoji('🎓'),
+                new StringSelectMenuOptionBuilder().setLabel('Al-Quds University').setValue('alquds').setEmoji('🎓'),
+                new StringSelectMenuOptionBuilder().setLabel('Arab American University').setValue('aaup').setEmoji('🎓')
               )
           )
         ],
@@ -602,7 +558,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
     if (interaction.isStringSelectMenu() && interaction.customId === 'select_university') {
 
       const selectedUni = interaction.values[0];
-
       verificationCodes.set(`uni_${interaction.user.id}`, { university: selectedUni });
 
       const modal = new ModalBuilder()
