@@ -309,7 +309,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
     // ================= USERNAME MODAL =================
     if (interaction.isModalSubmit() && interaction.customId === 'username_modal') {
 
-      // ⚠️ defer فوراً قبل أي عملية async
       await interaction.deferReply({ flags: 64 });
 
       const username = interaction.fields.getTextInputValue('username_input').trim();
@@ -332,9 +331,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
       const code = Math.floor(100000 + Math.random() * 900000);
       verificationCodes.set(interaction.user.id, { code, email });
 
-      // ===== إرسال الإيميل عبر Resend =====
+      // ===== إرسال الإيميل عبر Resend مع تفاصيل الخطأ =====
       try {
-        const { error } = await resend.emails.send({
+        const { data, error } = await resend.emails.send({
           from: process.env.EMAIL_USER,
           to: email,
           subject: 'PTUK Verification Code',
@@ -342,15 +341,17 @@ client.on(Events.InteractionCreate, async (interaction) => {
         });
 
         if (error) {
-          console.error('Resend error:', error);
+          console.error('Resend error FULL:', JSON.stringify(error));
           verificationCodes.delete(interaction.user.id);
-          return interaction.editReply('❌ فشل إرسال الإيميل');
+          return interaction.editReply(`❌ فشل إرسال الإيميل: ${error.message}`);
         }
 
+        console.log('✅ Mail sent successfully:', data);
+
       } catch (mailErr) {
-        console.error('Mail error:', mailErr.message);
+        console.error('Mail exception FULL:', mailErr);
         verificationCodes.delete(interaction.user.id);
-        return interaction.editReply('❌ فشل إرسال الإيميل');
+        return interaction.editReply(`❌ فشل إرسال الإيميل: ${mailErr.message}`);
       }
 
       return interaction.editReply({
@@ -761,7 +762,7 @@ async function handleUnban(interaction, input) {
 
   } catch (err) {
     console.error('Unban error:', err);
-    return interaction.editReply('❌ فشل فك الحظر');
+    return interaction.editReply('❌ فك الحظر');
   }
 
 }
