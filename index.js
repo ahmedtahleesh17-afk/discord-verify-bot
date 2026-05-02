@@ -19,7 +19,7 @@ const mailClient = new postmark.ServerClient(process.env.POSTMARK_API_KEY);
 
 const mysql = require('mysql2/promise');
 
-// ===================== CLIENT ====================
+// ===================== CLIENT ===================
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
